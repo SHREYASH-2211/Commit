@@ -1,30 +1,45 @@
-const BacktestSchema = new mongoose.Schema({
-    strategyId: { type: mongoose.Schema.Types.ObjectId, ref: "Strategy", required: true },
-    userId: { type: mongoose.Schema.Types.ObjectId, ref: "User", required: true },
-  
-    symbol: { type: String, required: true },  // e.g. "AAPL"
-    timeframe: { type: String, enum: ["1m", "5m", "1d"], default: "1d" },
-    startDate: { type: Date, required: true },
-    endDate: { type: Date, required: true },
-  
-    metrics: {
+import mongoose from "mongoose";
+
+const backtestSchema = new mongoose.Schema(
+  {
+    user: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User",
+      required: true,
+    },
+    strategyName: {
+      type: String,
+      required: true,
+    },
+    ticker: {
+      type: String,
+      required: true,
+    },
+    timeframe: {
+      type: String,
+      enum: ["1d", "1h", "15m"],
+      default: "1d",
+    },
+    parameters: {
+      type: Object, // e.g. { shortMA: 20, longMA: 50 }
+    },
+    results: {
       totalReturn: Number,
       sharpeRatio: Number,
-      winRate: Number,
-      maxDrawdown: Number
+      maxDrawdown: Number,
+      volatility: Number,
+      trades: [
+        {
+          entryDate: Date,
+          exitDate: Date,
+          entryPrice: Number,
+          exitPrice: Number,
+          profitLoss: Number,
+        },
+      ],
     },
-  
-    trades: [
-      {
-        date: Date,
-        action: { type: String, enum: ["BUY", "SELL"] },
-        price: Number,
-        quantity: Number
-      }
-    ],
-  
-    createdAt: { type: Date, default: Date.now }
-  });
-  
-  module.exports = mongoose.model("Backtest", BacktestSchema);
-  
+  },
+  { timestamps: true }
+);
+
+export const Backtest = mongoose.model("Backtest", backtestSchema);

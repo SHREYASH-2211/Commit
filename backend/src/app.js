@@ -1,6 +1,7 @@
 import express from "express";
 import cors from "cors";
 import cookieParser from "cookie-parser";
+import backtestRoutes from "./routes/backtest.routes.js";
 const app   = express();
 
 app.use(cors({
@@ -17,6 +18,7 @@ import userRouter from "./routes/user.routes.js";
 
 //Routes declaration
 app.use("/api/v1/users", userRouter);
+app.use("/api/backtests", backtestRoutes);
 //http://localhost:8000/api/v1/users/register
 
 export default app;
