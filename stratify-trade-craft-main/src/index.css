@@ -1,0 +1,213 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Stratify Design System - Premium Algo Trading Platform */
+
+@layer base {
+  :root {
+    /* Light Mode - Clean & Professional */
+    --background: 0 0% 100%;
+    --foreground: 224 71% 4%;
+
+    --card: 0 0% 100%;
+    --card-foreground: 224 71% 4%;
+
+    --popover: 0 0% 100%;
+    --popover-foreground: 224 71% 4%;
+
+    --primary: 220 91% 50%;
+    --primary-foreground: 0 0% 100%;
+
+    --secondary: 220 14% 96%;
+    --secondary-foreground: 220 9% 20%;
+
+    --muted: 220 14% 96%;
+    --muted-foreground: 220 9% 46%;
+
+    --accent: 220 14% 96%;
+    --accent-foreground: 220 9% 20%;
+
+    --destructive: 0 72% 51%;
+    --destructive-foreground: 0 0% 100%;
+
+    --border: 220 13% 85%;
+    --input: 220 13% 85%;
+    --ring: 220 91% 50%;
+
+    --radius: 0.75rem;
+
+    /* Trading-specific colors */
+    --success: 134 61% 41%;
+    --success-foreground: 0 0% 100%;
+    --warning: 48 96% 53%;
+    --warning-foreground: 0 0% 0%;
+    --profit: 134 61% 41%;
+    --loss: 0 72% 51%;
+
+    /* Premium gradients */
+    --gradient-primary: linear-gradient(135deg, hsl(25 95% 53%) 0%, hsl(190 94% 42%) 100%);
+    --gradient-secondary: linear-gradient(135deg, hsl(220 91% 50%) 0%, hsl(274 89% 56%) 100%);
+    --gradient-hero: linear-gradient(135deg, hsl(25 95% 53%) 0%, hsl(190 94% 42%) 50%, hsl(220 91% 50%) 100%);
+    --gradient-card: linear-gradient(135deg, hsl(0 0% 100%) 0%, hsl(220 14% 98%) 100%);
+
+    /* Sidebar */
+    --sidebar-background: 0 0% 98%;
+    --sidebar-foreground: 220 9% 20%;
+    --sidebar-primary: 220 91% 50%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 220 14% 96%;
+    --sidebar-accent-foreground: 220 9% 20%;
+    --sidebar-border: 220 13% 91%;
+    --sidebar-ring: 220 91% 50%;
+
+    /* Shadows & Effects */
+    --shadow-premium: 0 25px 50px -12px hsl(220 91% 50% / 0.25);
+    --shadow-glow: 0 0 40px hsl(190 94% 42% / 0.3);
+    --shadow-card: 0 4px 12px -2px hsl(220 9% 20% / 0.08);
+
+    /* Animations */
+    --transition-smooth: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    --transition-bounce: all 0.4s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+  }
+
+  .dark {
+    /* Dark Mode - Sleek & Modern */
+    --background: 224 71% 4%;
+    --foreground: 210 40% 98%;
+
+    --card: 224 71% 6%;
+    --card-foreground: 210 40% 98%;
+
+    --popover: 224 71% 6%;
+    --popover-foreground: 210 40% 98%;
+
+    --primary: 190 94% 42%;
+    --primary-foreground: 0 0% 0%;
+
+    --secondary: 215 28% 17%;
+    --secondary-foreground: 210 40% 98%;
+
+    --muted: 215 28% 17%;
+    --muted-foreground: 217 11% 65%;
+
+    --accent: 215 28% 17%;
+    --accent-foreground: 210 40% 98%;
+
+    --destructive: 0 63% 31%;
+    --destructive-foreground: 210 40% 98%;
+
+    --border: 215 28% 17%;
+    --input: 215 28% 17%;
+    --ring: 190 94% 42%;
+
+    /* Trading colors for dark mode */
+    --success: 134 61% 41%;
+    --success-foreground: 0 0% 100%;
+    --warning: 48 96% 53%;
+    --warning-foreground: 0 0% 0%;
+    --profit: 134 61% 41%;
+    --loss: 0 84% 60%;
+
+    /* Dark mode gradients */
+    --gradient-primary: linear-gradient(135deg, hsl(25 95% 53%) 0%, hsl(190 94% 42%) 100%);
+    --gradient-secondary: linear-gradient(135deg, hsl(190 94% 42%) 0%, hsl(274 89% 56%) 100%);
+    --gradient-hero: linear-gradient(135deg, hsl(25 95% 53%) 0%, hsl(190 94% 42%) 50%, hsl(274 89% 56%) 100%);
+    --gradient-card: linear-gradient(135deg, hsl(224 71% 6%) 0%, hsl(215 28% 17%) 100%);
+
+    /* Dark sidebar */
+    --sidebar-background: 224 71% 4%;
+    --sidebar-foreground: 210 40% 98%;
+    --sidebar-primary: 190 94% 42%;
+    --sidebar-primary-foreground: 0 0% 0%;
+    --sidebar-accent: 215 28% 17%;
+    --sidebar-accent-foreground: 210 40% 98%;
+    --sidebar-border: 215 28% 17%;
+    --sidebar-ring: 190 94% 42%;
+
+    /* Dark shadows & effects */
+    --shadow-premium: 0 25px 50px -12px hsl(0 0% 0% / 0.5);
+    --shadow-glow: 0 0 40px hsl(190 94% 42% / 0.4);
+    --shadow-card: 0 4px 12px -2px hsl(0 0% 0% / 0.3);
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply bg-background text-foreground transition-colors duration-300;
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  }
+
+  /* Custom gradient text utility */
+  .gradient-text {
+    background: var(--gradient-hero);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  .gradient-primary {
+    background: var(--gradient-primary);
+  }
+
+  .gradient-secondary {
+    background: var(--gradient-secondary);
+  }
+
+  .gradient-card {
+    background: var(--gradient-card);
+  }
+
+  /* Smooth transitions */
+  .smooth-transition {
+    transition: var(--transition-smooth);
+  }
+
+  .bounce-transition {
+    transition: var(--transition-bounce);
+  }
+
+  /* Trading status indicators */
+  .status-profit {
+    @apply text-green-500;
+  }
+
+  .status-loss {
+    @apply text-red-500;
+  }
+
+  /* Premium shadows */
+  .shadow-premium {
+    box-shadow: var(--shadow-premium);
+  }
+
+  .shadow-glow {
+    box-shadow: var(--shadow-glow);
+  }
+
+  .shadow-card {
+    box-shadow: var(--shadow-card);
+  }
+
+  /* Scrollbar styling */
+  ::-webkit-scrollbar {
+    width: 6px;
+  }
+
+  ::-webkit-scrollbar-track {
+    background: hsl(var(--muted));
+  }
+
+  ::-webkit-scrollbar-thumb {
+    background: hsl(var(--muted-foreground));
+    border-radius: 3px;
+  }
+
+  ::-webkit-scrollbar-thumb:hover {
+    background: hsl(var(--primary));
+  }
+}
