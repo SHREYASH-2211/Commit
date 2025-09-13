@@ -15,7 +15,10 @@ app.use(cookieParser());
 
 // Import routes
 import userRouter from "./routes/user.routes.js";
-
+// ...existing code...
+import strategyRouter from "./routes/strategyRoutes.js";
+// ...existing code...
+app.use("/api/v1/strategies", strategyRouter);
 //Routes declaration
 app.use("/api/v1/users", userRouter);
 app.use("/api/backtests", backtestRoutes);

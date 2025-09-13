@@ -1,0 +1,489 @@
+{
+  "info": {
+    "name": "Strategy Trading API Collection",
+    "description": "Complete API collection for testing all strategy-related endpoints",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:8000",
+      "type": "string"
+    },
+    {
+      "key": "accessToken",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "strategyId",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "templateId",
+      "value": "",
+      "type": "string"
+    }
+  ],
+  "auth": {
+    "type": "bearer",
+    "bearer": [
+      {
+        "key": "token",
+        "value": "{{accessToken}}",
+        "type": "string"
+      }
+    ]
+  },
+  "item": [
+    {
+      "name": "Authentication",
+      "item": [
+        {
+          "name": "Register User",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"John Doe\",\n  \"email\": \"john.doe@example.com\",\n  \"password\": \"password123\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/users/register",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "users", "register"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Login User",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "    const response = pm.response.json();",
+                  "    if (response.data && response.data.accessToken) {",
+                  "        pm.collectionVariables.set('accessToken', response.data.accessToken);",
+                  "    }",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"john.doe@example.com\",\n  \"password\": \"password123\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/users/login",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "users", "login"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get Current User",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/users/current-user",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "users", "current-user"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Logout User",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/users/logout",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "users", "logout"]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Strategy Builder Components",
+      "item": [
+        {
+          "name": "Get Builder Components",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/strategies/components",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "strategies", "components"]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Strategy Templates",
+      "item": [
+        {
+          "name": "Get All Templates",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "    const response = pm.response.json();",
+                  "    if (response.data && response.data.length > 0) {",
+                  "        pm.collectionVariables.set('templateId', response.data[0]._id);",
+                  "    }",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/strategies/templates",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "strategies", "templates"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Seed Templates",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/strategies/seed-templates",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "strategies", "seed-templates"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Clone Template",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"templateId\": \"{{templateId}}\",\n  \"name\": \"My Custom Strategy from Template\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/strategies/clone-template",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "strategies", "clone-template"]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Strategy CRUD Operations",
+      "item": [
+        {
+          "name": "Get All User Strategies",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/strategies?page=1&limit=10&category=all",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "strategies"],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "1"
+                },
+                {
+                  "key": "limit",
+                  "value": "10"
+                },
+                {
+                  "key": "category",
+                  "value": "all"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Create New Strategy",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 201) {",
+                  "    const response = pm.response.json();",
+                  "    if (response.data && response.data._id) {",
+                  "        pm.collectionVariables.set('strategyId', response.data._id);",
+                  "    }",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"My Custom Trading Strategy\",\n  \"description\": \"A simple RSI-based mean reversion strategy\",\n  \"category\": \"mean_reversion\",\n  \"rules\": [\n    {\n      \"name\": \"Buy on RSI Oversold\",\n      \"conditions\": [\n        {\n          \"indicator\": \"rsi\",\n          \"operator\": \"<\",\n          \"value\": 30,\n          \"params\": {\n            \"period\": 14\n          },\n          \"timeframe\": \"1h\"\n        }\n      ],\n      \"logicalOperator\": \"AND\",\n      \"action\": {\n        \"type\": \"buy\",\n        \"quantity\": \"half\",\n        \"stopLoss\": 5,\n        \"takeProfit\": 10\n      },\n      \"priority\": 1,\n      \"isActive\": true\n    },\n    {\n      \"name\": \"Sell on RSI Overbought\",\n      \"conditions\": [\n        {\n          \"indicator\": \"rsi\",\n          \"operator\": \">\",\n          \"value\": 70,\n          \"params\": {\n            \"period\": 14\n          },\n          \"timeframe\": \"1h\"\n        }\n      ],\n      \"logicalOperator\": \"AND\",\n      \"action\": {\n        \"type\": \"sell\",\n        \"quantity\": \"all\"\n      },\n      \"priority\": 2,\n      \"isActive\": true\n    }\n  ],\n  \"riskManagement\": {\n    \"maxPositionSize\": 20,\n    \"maxDailyLoss\": 5,\n    \"stopLossEnabled\": true,\n    \"takeProfitEnabled\": true\n  },\n  \"tags\": [\"rsi\", \"mean-reversion\", \"custom\"]\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/strategies",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "strategies"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get Single Strategy",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/strategies/{{strategyId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "strategies", "{{strategyId}}"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Update Strategy",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Updated Trading Strategy\",\n  \"description\": \"Updated description for the strategy\",\n  \"isActive\": true,\n  \"rules\": [\n    {\n      \"name\": \"Updated Buy Rule\",\n      \"conditions\": [\n        {\n          \"indicator\": \"rsi\",\n          \"operator\": \"<\",\n          \"value\": 25,\n          \"params\": {\n            \"period\": 14\n          },\n          \"timeframe\": \"1h\"\n        }\n      ],\n      \"logicalOperator\": \"AND\",\n      \"action\": {\n        \"type\": \"buy\",\n        \"quantity\": \"custom\",\n        \"customQuantity\": 1000,\n        \"stopLoss\": 3,\n        \"takeProfit\": 8\n      },\n      \"priority\": 1,\n      \"isActive\": true\n    }\n  ],\n  \"riskManagement\": {\n    \"maxPositionSize\": 15,\n    \"maxDailyLoss\": 3,\n    \"stopLossEnabled\": true,\n    \"takeProfitEnabled\": true\n  },\n  \"tags\": [\"rsi\", \"mean-reversion\", \"updated\"]\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/strategies/{{strategyId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "strategies", "{{strategyId}}"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Delete Strategy",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/strategies/{{strategyId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "strategies", "{{strategyId}}"]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Advanced Strategy Examples",
+      "item": [
+        {
+          "name": "Create SMA Crossover Strategy",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"SMA Crossover Strategy\",\n  \"description\": \"Buy when fast SMA crosses above slow SMA, sell when it crosses below\",\n  \"category\": \"trend_following\",\n  \"rules\": [\n    {\n      \"name\": \"Buy Signal - SMA Crossover\",\n      \"conditions\": [\n        {\n          \"indicator\": \"sma\",\n          \"operator\": \"crosses_above\",\n          \"value\": {\n            \"indicator\": \"sma\",\n            \"params\": {\n              \"period\": 50\n            }\n          },\n          \"params\": {\n            \"period\": 20\n          },\n          \"timeframe\": \"1d\"\n        }\n      ],\n      \"logicalOperator\": \"AND\",\n      \"action\": {\n        \"type\": \"buy\",\n        \"quantity\": \"half\",\n        \"stopLoss\": 5,\n        \"takeProfit\": 10\n      },\n      \"priority\": 1,\n      \"isActive\": true\n    },\n    {\n      \"name\": \"Sell Signal - SMA Crossover\",\n      \"conditions\": [\n        {\n          \"indicator\": \"sma\",\n          \"operator\": \"crosses_below\",\n          \"value\": {\n            \"indicator\": \"sma\",\n            \"params\": {\n              \"period\": 50\n            }\n          },\n          \"params\": {\n            \"period\": 20\n          },\n          \"timeframe\": \"1d\"\n        }\n      ],\n      \"logicalOperator\": \"AND\",\n      \"action\": {\n        \"type\": \"sell\",\n        \"quantity\": \"all\"\n      },\n      \"priority\": 2,\n      \"isActive\": true\n    }\n  ],\n  \"riskManagement\": {\n    \"maxPositionSize\": 20,\n    \"maxDailyLoss\": 3,\n    \"stopLossEnabled\": true,\n    \"takeProfitEnabled\": true\n  },\n  \"tags\": [\"sma\", \"crossover\", \"trend-following\"]\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/strategies",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "strategies"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Create MACD Strategy",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"MACD Momentum Strategy\",\n  \"description\": \"Buy when MACD line crosses above signal line, sell when it crosses below\",\n  \"category\": \"momentum\",\n  \"rules\": [\n    {\n      \"name\": \"MACD Bullish Cross\",\n      \"conditions\": [\n        {\n          \"indicator\": \"macd\",\n          \"operator\": \"crosses_above\",\n          \"value\": {\n            \"indicator\": \"macd\",\n            \"line\": \"signal\"\n          },\n          \"params\": {\n            \"fast\": 12,\n            \"slow\": 26,\n            \"signal\": 9\n          },\n          \"timeframe\": \"1d\"\n        },\n        {\n          \"indicator\": \"macd\",\n          \"operator\": \">\",\n          \"value\": 0,\n          \"params\": {\n            \"fast\": 12,\n            \"slow\": 26,\n            \"signal\": 9\n          },\n          \"timeframe\": \"1d\"\n        }\n      ],\n      \"logicalOperator\": \"AND\",\n      \"action\": {\n        \"type\": \"buy\",\n        \"quantity\": \"half\",\n        \"stopLoss\": 3,\n        \"takeProfit\": 9\n      },\n      \"priority\": 1,\n      \"isActive\": true\n    },\n    {\n      \"name\": \"MACD Bearish Cross\",\n      \"conditions\": [\n        {\n          \"indicator\": \"macd\",\n          \"operator\": \"crosses_below\",\n          \"value\": {\n            \"indicator\": \"macd\",\n            \"line\": \"signal\"\n          },\n          \"params\": {\n            \"fast\": 12,\n            \"slow\": 26,\n            \"signal\": 9\n          },\n          \"timeframe\": \"1d\"\n        }\n      ],\n      \"logicalOperator\": \"AND\",\n      \"action\": {\n        \"type\": \"sell\",\n        \"quantity\": \"all\"\n      },\n      \"priority\": 2,\n      \"isActive\": true\n    }\n  ],\n  \"riskManagement\": {\n    \"maxPositionSize\": 18,\n    \"maxDailyLoss\": 3,\n    \"stopLossEnabled\": true,\n    \"takeProfitEnabled\": true\n  },\n  \"tags\": [\"macd\", \"momentum\", \"crossover\"]\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/strategies",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "strategies"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Create Multi-Indicator Strategy",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Multi-Indicator Confirmation Strategy\",\n  \"description\": \"Conservative strategy requiring multiple indicators to align before trading\",\n  \"category\": \"trend_following\",\n  \"rules\": [\n    {\n      \"name\": \"Multi-Signal Buy\",\n      \"conditions\": [\n        {\n          \"indicator\": \"price\",\n          \"operator\": \">\",\n          \"value\": {\n            \"indicator\": \"sma\",\n            \"params\": {\n              \"period\": 50\n            }\n          },\n          \"timeframe\": \"1d\"\n        },\n        {\n          \"indicator\": \"rsi\",\n          \"operator\": \">\",\n          \"value\": 50,\n          \"params\": {\n            \"period\": 14\n          },\n          \"timeframe\": \"1d\"\n        },\n        {\n          \"indicator\": \"macd\",\n          \"operator\": \">\",\n          \"value\": {\n            \"indicator\": \"macd\",\n            \"line\": \"signal\"\n          },\n          \"params\": {\n            \"fast\": 12,\n            \"slow\": 26,\n            \"signal\": 9\n          },\n          \"timeframe\": \"1d\"\n        }\n      ],\n      \"logicalOperator\": \"AND\",\n      \"action\": {\n        \"type\": \"buy\",\n        \"quantity\": \"custom\",\n        \"customQuantity\": 500,\n        \"stopLoss\": 5,\n        \"takeProfit\": 12\n      },\n      \"priority\": 1,\n      \"isActive\": true\n    },\n    {\n      \"name\": \"Multi-Signal Sell\",\n      \"conditions\": [\n        {\n          \"indicator\": \"price\",\n          \"operator\": \"<\",\n          \"value\": {\n            \"indicator\": \"sma\",\n            \"params\": {\n              \"period\": 20\n            }\n          },\n          \"timeframe\": \"1d\"\n        },\n        {\n          \"indicator\": \"rsi\",\n          \"operator\": \"<\",\n          \"value\": 45,\n          \"params\": {\n            \"period\": 14\n          },\n          \"timeframe\": \"1d\"\n        }\n      ],\n      \"logicalOperator\": \"OR\",\n      \"action\": {\n        \"type\": \"sell\",\n        \"quantity\": \"all\"\n      },\n      \"priority\": 2,\n      \"isActive\": true\n    }\n  ],\n  \"riskManagement\": {\n    \"maxPositionSize\": 12,\n    \"maxDailyLoss\": 2,\n    \"stopLossEnabled\": true,\n    \"takeProfitEnabled\": true\n  },\n  \"tags\": [\"multi-indicator\", \"conservative\", \"confirmation\"]\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/strategies",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "strategies"]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Error Testing",
+      "item": [
+        {
+          "name": "Create Invalid Strategy (Missing Rules)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Invalid Strategy\",\n  \"description\": \"This should fail validation\",\n  \"category\": \"custom\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/strategies",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "strategies"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Create Strategy with Invalid RSI Value",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Invalid RSI Strategy\",\n  \"description\": \"This should fail RSI validation\",\n  \"category\": \"mean_reversion\",\n  \"rules\": [\n    {\n      \"name\": \"Invalid RSI Rule\",\n      \"conditions\": [\n        {\n          \"indicator\": \"rsi\",\n          \"operator\": \">\",\n          \"value\": 150,\n          \"params\": {\n            \"period\": 14\n          },\n          \"timeframe\": \"1h\"\n        }\n      ],\n      \"logicalOperator\": \"AND\",\n      \"action\": {\n        \"type\": \"buy\",\n        \"quantity\": \"half\"\n      },\n      \"priority\": 1,\n      \"isActive\": true\n    }\n  ],\n  \"riskManagement\": {\n    \"maxPositionSize\": 20,\n    \"maxDailyLoss\": 5,\n    \"stopLossEnabled\": true,\n    \"takeProfitEnabled\": true\n  }\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/strategies",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "strategies"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get Non-existent Strategy",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/strategies/507f1f77bcf86cd799439011",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "strategies", "507f1f77bcf86cd799439011"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Update Non-existent Strategy",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Updated Strategy\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/strategies/507f1f77bcf86cd799439011",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "strategies", "507f1f77bcf86cd799439011"]
+            }
+          },
+          "response": []
+        }
+      ]
+    }
+  ]
+}
