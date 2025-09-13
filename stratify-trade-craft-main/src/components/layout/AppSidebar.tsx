@@ -13,6 +13,7 @@ import {
   Heart,
   LogOut,
   LifeBuoy,   // Assistance icon
+  Layers,     // Algorithm Trading Levels icon
 } from "lucide-react";
 import {
   Sidebar,
@@ -39,7 +40,8 @@ const navigationItems = [
   { title: "Strategy Copilot", url: "/copilot", icon: MessageSquare },
   { title: "Fund Management", url: "/fund-management", icon: Settings },
   { title: "Wishlist", url: "/wishlist", icon: Heart },
-  { title: "Assistance", url: "/assistance", icon: LifeBuoy }, // ✅ New item
+  { title: "Assistance", url: "/assistance", icon: LifeBuoy },
+  { title: "Algorithm Trading Levels", url: "/algorithm-trading-levels", icon: Layers }, // ✅ New item
 ];
 
 export function AppSidebar() {

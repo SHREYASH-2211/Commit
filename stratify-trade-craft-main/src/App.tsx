@@ -18,7 +18,8 @@ import Portfolio from "./pages/Portfolio";
 import Copilot from "./pages/Copilot";
 import FundManagement from "./pages/FundManagement";
 import Wishlist from "./pages/Wishlist";
-import Assistance from "./pages/Assistance"; // ✅ NEW
+import Assistance from "./pages/Assistance";
+import AlgorithmTradingLevels from "./pages/Learning"; // ✅ NEW
 import Auth from "./pages/Auth";
 import NotFound from "./pages/NotFound";
 
@@ -64,7 +65,8 @@ const AppContent = () => {
             <Route path="/copilot" element={<Copilot />} />
             <Route path="/fund-management" element={<FundManagement />} />
             <Route path="/wishlist" element={<Wishlist />} />
-            <Route path="/assistance" element={<Assistance />} /> {/* ✅ NEW */}
+            <Route path="/assistance" element={<Assistance />} />
+            <Route path="/algorithm-trading-levels" element={<AlgorithmTradingLevels />} /> {/* ✅ NEW */}
             <Route path="*" element={<NotFound />} />
           </Routes>
         </div>

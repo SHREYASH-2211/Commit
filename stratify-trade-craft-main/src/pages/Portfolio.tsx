@@ -1,11 +1,14 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { TrendingUp, TrendingDown, Plus, MoreHorizontal } from 'lucide-react';
 
 const Portfolio: React.FC = () => {
-  const holdings = [
+  const [holdings, setHoldings] = useState([
     {
       symbol: 'RELIANCE',
       name: 'Reliance Industries Ltd',
@@ -33,7 +36,51 @@ const Portfolio: React.FC = () => {
       change: +67.45,
       changePercent: +4.63,
     },
-  ];
+  ]);
+
+  const [newStock, setNewStock] = useState({
+    symbol: '',
+    name: '',
+    quantity: 0,
+    avgPrice: 0,
+    currentPrice: 0,
+  });
+
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
+
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { name, value } = e.target;
+    setNewStock({
+      ...newStock,
+      [name]: name === 'symbol' || name === 'name' ? value : parseFloat(value),
+    });
+  };
+
+  const handleAddStock = () => {
+    if (!newStock.symbol || !newStock.name || newStock.quantity <= 0 || newStock.avgPrice <= 0 || newStock.currentPrice <= 0) {
+      alert('Please fill all fields with valid values');
+      return;
+    }
+
+    const change = newStock.currentPrice - newStock.avgPrice;
+    const changePercent = (change / newStock.avgPrice) * 100;
+
+    const newHolding = {
+      ...newStock,
+      change,
+      changePercent,
+    };
+
+    setHoldings([...holdings, newHolding]);
+    setNewStock({
+      symbol: '',
+      name: '',
+      quantity: 0,
+      avgPrice: 0,
+      currentPrice: 0,
+    });
+    setIsDialogOpen(false);
+  };
 
   const totalValue = holdings.reduce((sum, holding) => sum + (holding.currentPrice * holding.quantity), 0);
   const totalInvestment = holdings.reduce((sum, holding) => sum + (holding.avgPrice * holding.quantity), 0);
@@ -48,10 +95,98 @@ const Portfolio: React.FC = () => {
             Manage your investment portfolio
           </p>
         </div>
-        <Button>
-          <Plus className="h-4 w-4 mr-2" />
-          Add Stock
-        </Button>
+        
+        <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+          <DialogTrigger asChild>
+            <Button>
+              <Plus className="h-4 w-4 mr-2" />
+              Add Stock
+            </Button>
+          </DialogTrigger>
+          <DialogContent className="sm:max-w-[425px]">
+            <DialogHeader>
+              <DialogTitle>Add New Stock</DialogTitle>
+              <DialogDescription>
+                Enter the details of the stock you want to add to your portfolio.
+              </DialogDescription>
+            </DialogHeader>
+            <div className="grid gap-4 py-4">
+              <div className="grid grid-cols-4 items-center gap-4">
+                <Label htmlFor="symbol" className="text-right">
+                  Symbol
+                </Label>
+                <Input
+                  id="symbol"
+                  name="symbol"
+                  value={newStock.symbol}
+                  onChange={handleInputChange}
+                  className="col-span-3"
+                  placeholder="e.g., AAPL"
+                />
+              </div>
+              <div className="grid grid-cols-4 items-center gap-4">
+                <Label htmlFor="name" className="text-right">
+                  Company Name
+                </Label>
+                <Input
+                  id="name"
+                  name="name"
+                  value={newStock.name}
+                  onChange={handleInputChange}
+                  className="col-span-3"
+                  placeholder="e.g., Apple Inc."
+                />
+              </div>
+              <div className="grid grid-cols-4 items-center gap-4">
+                <Label htmlFor="quantity" className="text-right">
+                  Quantity
+                </Label>
+                <Input
+                  id="quantity"
+                  name="quantity"
+                  type="number"
+                  value={newStock.quantity}
+                  onChange={handleInputChange}
+                  className="col-span-3"
+                  placeholder="e.g., 10"
+                />
+              </div>
+              <div className="grid grid-cols-4 items-center gap-4">
+                <Label htmlFor="avgPrice" className="text-right">
+                  Avg. Price
+                </Label>
+                <Input
+                  id="avgPrice"
+                  name="avgPrice"
+                  type="number"
+                  step="0.01"
+                  value={newStock.avgPrice}
+                  onChange={handleInputChange}
+                  className="col-span-3"
+                  placeholder="e.g., 150.25"
+                />
+              </div>
+              <div className="grid grid-cols-4 items-center gap-4">
+                <Label htmlFor="currentPrice" className="text-right">
+                  Current Price
+                </Label>
+                <Input
+                  id="currentPrice"
+                  name="currentPrice"
+                  type="number"
+                  step="0.01"
+                  value={newStock.currentPrice}
+                  onChange={handleInputChange}
+                  className="col-span-3"
+                  placeholder="e.g., 155.75"
+                />
+              </div>
+            </div>
+            <DialogFooter>
+              <Button type="submit" onClick={handleAddStock}>Add Stock</Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
       </div>
 
       {/* Portfolio Summary */}
