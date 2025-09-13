@@ -20,7 +20,6 @@ const generateAccessAndRefreshToken = async (userId) => {
   }
 };
 
-// 📝 Register User
 const registerUser = asyncHandler(async (req, res) => {
   const { name, email, password } = req.body;
 
@@ -107,7 +106,6 @@ const logoutUser = asyncHandler(async (req, res) => {
     .json(new ApiResponse(200, {}, "User logged out successfully"));
 });
 
-// ♻️ Refresh Access Token
 const refreshAccessToken = asyncHandler(async (req, res) => {
   const incomingRefreshToken = req.cookies.refreshToken || req.body.refreshToken;
 
