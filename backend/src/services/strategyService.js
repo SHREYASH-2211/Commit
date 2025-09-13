@@ -60,6 +60,14 @@ class StrategyService {
     const trades = [];
     const portfolioHistory = [];
     const signals = [];
+    let currentPosition = {
+      isOpen: false,
+      entryPrice: 0,
+      entryTimestamp: null,
+      shares: 0,
+      stopLossPrice: 0,
+      takeProfitPrice: 0
+    };
 
     // Calculate all required indicators upfront
     const indicators = await calculateIndicators(marketData, this.getRequiredIndicators(strategy));
@@ -71,31 +79,40 @@ class StrategyService {
         indicators: this.getIndicatorsAtIndex(indicators, i)
       };
 
-      // Evaluate all strategy rules
-      const activeRules = strategy.rules.filter(rule => rule.isActive);
-      const triggeredRule = await this.evaluateRules(activeRules, currentData, marketData, i);
+      // Check if using new entry/exit structure or legacy rules
+      const hasNewStructure = (strategy.entryRules && strategy.entryRules.length > 0) || 
+                             (strategy.exitRules && strategy.exitRules.length > 0);
+      
+      if (hasNewStructure) {
+        // Process entry and exit rules separately
+        await this.processEntryExitRules(strategy, currentData, marketData, i, portfolio, currentPosition, trades, signals, commission);
+      } else {
+        // Legacy rule processing
+        const activeRules = strategy.rules.filter(rule => rule.isActive);
+        const triggeredRule = await this.evaluateRules(activeRules, currentData, marketData, i);
 
-      if (triggeredRule) {
-        const signal = {
-          timestamp: currentData.timestamp,
-          price: currentPrice,
-          rule: triggeredRule.name,
-          action: triggeredRule.action.type,
-          reason: this.generateSignalReason(triggeredRule, currentData)
-        };
-        signals.push(signal);
+        if (triggeredRule) {
+          const signal = {
+            timestamp: currentData.timestamp,
+            price: currentPrice,
+            rule: triggeredRule.name,
+            action: triggeredRule.action.type,
+            reason: this.generateSignalReason(triggeredRule, currentData)
+          };
+          signals.push(signal);
 
-        // Execute trade if conditions are met
-        const trade = this.executeTrade(
-          portfolio, 
-          currentPrice, 
-          triggeredRule.action, 
-          commission,
-          currentData.timestamp
-        );
-        
-        if (trade) {
-          trades.push(trade);
+          // Execute trade if conditions are met
+          const trade = this.executeTrade(
+            portfolio, 
+            currentPrice, 
+            triggeredRule.action, 
+            commission,
+            currentData.timestamp
+          );
+          
+          if (trade) {
+            trades.push(trade);
+          }
         }
       }
 
@@ -114,7 +131,8 @@ class StrategyService {
         cash: portfolio.cash,
         shares: portfolio.shares,
         price: currentPrice,
-        drawdown: currentDrawdown
+        drawdown: currentDrawdown,
+        position: { ...currentPosition }
       });
 
       // Apply risk management
@@ -140,7 +158,9 @@ class StrategyService {
       strategy: {
         id: strategy._id,
         name: strategy.name,
-        rules: strategy.rules.length,
+        rules: strategy.rules ? strategy.rules.length : 0,
+        entryRules: strategy.entryRules ? strategy.entryRules.length : 0,
+        exitRules: strategy.exitRules ? strategy.exitRules.length : 0,
         riskManagement: strategy.riskManagement
       }
     };
@@ -364,18 +384,192 @@ class StrategyService {
     };
   }
 
+  // Process entry and exit rules separately
+  async processEntryExitRules(strategy, currentData, marketData, currentIndex, portfolio, currentPosition, trades, signals, commission) {
+    const currentPrice = currentData.close;
+
+    // Check if we should exit current position first
+    if (currentPosition.isOpen) {
+      // Check stop loss and take profit
+      const exitReason = this.checkStopLossTakeProfit(currentPosition, currentPrice);
+      if (exitReason) {
+        await this.executeExit(portfolio, currentPosition, currentPrice, exitReason, trades, signals, commission, currentData.timestamp);
+        return;
+      }
+
+      // Check exit rules
+      const activeExitRules = strategy.exitRules.filter(rule => rule.isActive);
+      const triggeredExitRule = await this.evaluateRules(activeExitRules, currentData, marketData, currentIndex);
+
+      if (triggeredExitRule) {
+        await this.executeExit(portfolio, currentPosition, currentPrice, 'exit_rule', trades, signals, commission, currentData.timestamp, triggeredExitRule);
+        return;
+      }
+    }
+
+    // Check entry rules only if no position is open (or if multiple positions are allowed)
+    if (!currentPosition.isOpen || strategy.executionSettings?.allowMultiplePositions) {
+      const activeEntryRules = strategy.entryRules.filter(rule => rule.isActive);
+      const triggeredEntryRule = await this.evaluateRules(activeEntryRules, currentData, marketData, currentIndex);
+
+      if (triggeredEntryRule) {
+        await this.executeEntry(portfolio, currentPosition, currentPrice, triggeredEntryRule, trades, signals, commission, currentData.timestamp);
+      }
+    }
+  }
+
+  // Check stop loss and take profit
+  checkStopLossTakeProfit(position, currentPrice) {
+    if (position.stopLossPrice && currentPrice <= position.stopLossPrice) {
+      return { reason: 'stop_loss', price: position.stopLossPrice };
+    }
+    
+    if (position.takeProfitPrice && currentPrice >= position.takeProfitPrice) {
+      return { reason: 'take_profit', price: position.takeProfitPrice };
+    }
+    
+    return null;
+  }
+
+  // Execute entry
+  async executeEntry(portfolio, position, price, rule, trades, signals, commission, timestamp) {
+    const signal = {
+      timestamp,
+      price,
+      rule: rule.name,
+      action: 'buy',
+      reason: this.generateSignalReason(rule, { close: price }),
+      type: 'entry'
+    };
+    signals.push(signal);
+
+    // Calculate position size
+    let buyAmount = 0;
+    switch (rule.action.quantity) {
+      case 'all':
+        buyAmount = portfolio.cash * (1 - commission);
+        break;
+      case 'half':
+        buyAmount = portfolio.cash * 0.5 * (1 - commission);
+        break;
+      case 'custom':
+        buyAmount = Math.min(rule.action.customQuantity, portfolio.cash * (1 - commission));
+        break;
+    }
+
+    const shares = Math.floor(buyAmount / price);
+    const cost = shares * price * (1 + commission);
+
+    if (shares > 0 && cost <= portfolio.cash) {
+      portfolio.cash -= cost;
+      portfolio.shares += shares;
+
+      // Update position
+      position.isOpen = true;
+      position.entryPrice = price;
+      position.entryTimestamp = timestamp;
+      position.shares = shares;
+      
+      // Set stop loss and take profit
+      if (rule.action.stopLoss) {
+        position.stopLossPrice = price * (1 - rule.action.stopLoss / 100);
+      }
+      if (rule.action.takeProfit) {
+        position.takeProfitPrice = price * (1 + rule.action.takeProfit / 100);
+      }
+
+      const trade = {
+        timestamp,
+        type: 'buy',
+        shares,
+        price,
+        cost,
+        commission: cost * commission,
+        rule: rule.name
+      };
+      trades.push(trade);
+    }
+  }
+
+  // Execute exit
+  async executeExit(portfolio, position, price, reason, trades, signals, commission, timestamp, rule = null) {
+    const signal = {
+      timestamp,
+      price,
+      rule: rule ? rule.name : 'Stop Loss/Take Profit',
+      action: 'sell',
+      reason: reason.reason || reason,
+      type: 'exit'
+    };
+    signals.push(signal);
+
+    if (position.shares > 0) {
+      const revenue = position.shares * price * (1 - commission);
+      
+      portfolio.cash += revenue;
+      portfolio.shares -= position.shares;
+
+      const trade = {
+        timestamp,
+        type: 'sell',
+        shares: position.shares,
+        price,
+        revenue,
+        commission: position.shares * price * commission,
+        rule: rule ? rule.name : 'Stop Loss/Take Profit',
+        reason: reason.reason || reason
+      };
+      trades.push(trade);
+
+      // Reset position
+      position.isOpen = false;
+      position.entryPrice = 0;
+      position.entryTimestamp = null;
+      position.shares = 0;
+      position.stopLossPrice = 0;
+      position.takeProfitPrice = 0;
+    }
+  }
+
   // Helper methods
   getRequiredIndicators(strategy) {
     const indicators = new Set();
     
-    strategy.rules.forEach(rule => {
-      rule.conditions.forEach(condition => {
-        indicators.add(condition.indicator);
-        if (typeof condition.value === 'object' && condition.value.indicator) {
-          indicators.add(condition.value.indicator);
-        }
+    // Check legacy rules
+    if (strategy.rules) {
+      strategy.rules.forEach(rule => {
+        rule.conditions.forEach(condition => {
+          indicators.add(condition.indicator);
+          if (typeof condition.value === 'object' && condition.value.indicator) {
+            indicators.add(condition.value.indicator);
+          }
+        });
       });
-    });
+    }
+
+    // Check entry rules
+    if (strategy.entryRules) {
+      strategy.entryRules.forEach(rule => {
+        rule.conditions.forEach(condition => {
+          indicators.add(condition.indicator);
+          if (typeof condition.value === 'object' && condition.value.indicator) {
+            indicators.add(condition.value.indicator);
+          }
+        });
+      });
+    }
+
+    // Check exit rules
+    if (strategy.exitRules) {
+      strategy.exitRules.forEach(rule => {
+        rule.conditions.forEach(condition => {
+          indicators.add(condition.indicator);
+          if (typeof condition.value === 'object' && condition.value.indicator) {
+            indicators.add(condition.value.indicator);
+          }
+        });
+      });
+    }
 
     return Array.from(indicators);
   }

@@ -2,12 +2,46 @@
 class ValidationService {
   validateStrategy(strategyData) {
     const errors = [];
-    const { rules, riskManagement } = strategyData;
+    const { rules, entryRules, exitRules, riskManagement, executionSettings } = strategyData;
 
-    // Validate rules
-    if (!rules || !Array.isArray(rules) || rules.length === 0) {
-      errors.push('Strategy must have at least one rule');
-    } else {
+    // Check if using new entry/exit structure or legacy rules
+    const hasNewStructure = (entryRules && entryRules.length > 0) || (exitRules && exitRules.length > 0);
+    const hasLegacyRules = rules && rules.length > 0;
+
+    if (!hasNewStructure && !hasLegacyRules) {
+      errors.push('Strategy must have either entry/exit rules or legacy rules');
+    }
+
+    // Validate entry rules
+    if (entryRules) {
+      if (!Array.isArray(entryRules)) {
+        errors.push('Entry rules must be an array');
+      } else if (entryRules.length === 0) {
+        errors.push('Strategy must have at least one entry rule');
+      } else {
+        entryRules.forEach((rule, index) => {
+          const ruleErrors = this.validateEntryRule(rule, index);
+          errors.push(...ruleErrors);
+        });
+      }
+    }
+
+    // Validate exit rules
+    if (exitRules) {
+      if (!Array.isArray(exitRules)) {
+        errors.push('Exit rules must be an array');
+      } else if (exitRules.length === 0) {
+        errors.push('Strategy must have at least one exit rule');
+      } else {
+        exitRules.forEach((rule, index) => {
+          const ruleErrors = this.validateExitRule(rule, index);
+          errors.push(...ruleErrors);
+        });
+      }
+    }
+
+    // Validate legacy rules (for backward compatibility)
+    if (rules && rules.length > 0) {
       rules.forEach((rule, index) => {
         const ruleErrors = this.validateRule(rule, index);
         errors.push(...ruleErrors);
@@ -20,9 +54,20 @@ class ValidationService {
       errors.push(...riskErrors);
     }
 
+    // Validate execution settings
+    if (executionSettings) {
+      const executionErrors = this.validateExecutionSettings(executionSettings);
+      errors.push(...executionErrors);
+    }
+
     // Check for conflicting rules
-    const conflictErrors = this.checkForConflicts(rules);
-    errors.push(...conflictErrors);
+    if (hasNewStructure) {
+      const conflictErrors = this.checkForConflicts(entryRules, exitRules);
+      errors.push(...conflictErrors);
+    } else if (hasLegacyRules) {
+      const conflictErrors = this.checkForConflicts(rules);
+      errors.push(...conflictErrors);
+    }
 
     return {
       isValid: errors.length === 0,
@@ -139,6 +184,156 @@ class ValidationService {
     return errors;
   }
 
+  validateEntryRule(rule, index) {
+    const errors = [];
+    const prefix = `Entry Rule ${index + 1}:`;
+
+    // Validate rule structure
+    if (!rule.name || rule.name.trim() === '') {
+      errors.push(`${prefix} Rule name is required`);
+    }
+
+    if (!rule.conditions || !Array.isArray(rule.conditions) || rule.conditions.length === 0) {
+      errors.push(`${prefix} Rule must have at least one condition`);
+    } else {
+      rule.conditions.forEach((condition, condIndex) => {
+        const condErrors = this.validateCondition(condition, index, condIndex);
+        errors.push(...condErrors);
+      });
+    }
+
+    if (!rule.action) {
+      errors.push(`${prefix} Rule must have an action`);
+    } else {
+      const actionErrors = this.validateEntryAction(rule.action, index);
+      errors.push(...actionErrors);
+    }
+
+    // Validate logical operator for multiple conditions
+    if (rule.conditions && rule.conditions.length > 1) {
+      if (!rule.logicalOperator || !['AND', 'OR'].includes(rule.logicalOperator)) {
+        errors.push(`${prefix} Invalid logical operator. Must be 'AND' or 'OR'`);
+      }
+    }
+
+    return errors;
+  }
+
+  validateExitRule(rule, index) {
+    const errors = [];
+    const prefix = `Exit Rule ${index + 1}:`;
+
+    // Validate rule structure
+    if (!rule.name || rule.name.trim() === '') {
+      errors.push(`${prefix} Rule name is required`);
+    }
+
+    if (!rule.conditions || !Array.isArray(rule.conditions) || rule.conditions.length === 0) {
+      errors.push(`${prefix} Rule must have at least one condition`);
+    } else {
+      rule.conditions.forEach((condition, condIndex) => {
+        const condErrors = this.validateCondition(condition, index, condIndex);
+        errors.push(...condErrors);
+      });
+    }
+
+    if (!rule.action) {
+      errors.push(`${prefix} Rule must have an action`);
+    } else {
+      const actionErrors = this.validateExitAction(rule.action, index);
+      errors.push(...actionErrors);
+    }
+
+    // Validate logical operator for multiple conditions
+    if (rule.conditions && rule.conditions.length > 1) {
+      if (!rule.logicalOperator || !['AND', 'OR'].includes(rule.logicalOperator)) {
+        errors.push(`${prefix} Invalid logical operator. Must be 'AND' or 'OR'`);
+      }
+    }
+
+    return errors;
+  }
+
+  validateEntryAction(action, ruleIndex) {
+    const errors = [];
+    const prefix = `Entry Rule ${ruleIndex + 1}, Action:`;
+
+    if (action.type !== 'buy') {
+      errors.push(`${prefix} Entry rule action must be 'buy'`);
+    }
+
+    const validQuantities = ['all', 'half', 'custom'];
+    if (!validQuantities.includes(action.quantity)) {
+      errors.push(`${prefix} Invalid quantity type '${action.quantity}'`);
+    }
+
+    if (action.quantity === 'custom') {
+      if (!action.customQuantity || action.customQuantity <= 0) {
+        errors.push(`${prefix} Custom quantity must be greater than 0`);
+      }
+    }
+
+    if (action.stopLoss !== undefined) {
+      if (action.stopLoss < 0 || action.stopLoss > 100) {
+        errors.push(`${prefix} Stop loss must be between 0 and 100 percent`);
+      }
+    }
+
+    if (action.takeProfit !== undefined && action.takeProfit <= 0) {
+      errors.push(`${prefix} Take profit must be greater than 0`);
+    }
+
+    return errors;
+  }
+
+  validateExitAction(action, ruleIndex) {
+    const errors = [];
+    const prefix = `Exit Rule ${ruleIndex + 1}, Action:`;
+
+    if (action.type !== 'sell') {
+      errors.push(`${prefix} Exit rule action must be 'sell'`);
+    }
+
+    const validQuantities = ['all', 'half', 'custom'];
+    if (!validQuantities.includes(action.quantity)) {
+      errors.push(`${prefix} Invalid quantity type '${action.quantity}'`);
+    }
+
+    if (action.quantity === 'custom') {
+      if (!action.customQuantity || action.customQuantity <= 0) {
+        errors.push(`${prefix} Custom quantity must be greater than 0`);
+      }
+    }
+
+    return errors;
+  }
+
+  validateExecutionSettings(executionSettings) {
+    const errors = [];
+
+    if (executionSettings.allowMultiplePositions !== undefined) {
+      if (typeof executionSettings.allowMultiplePositions !== 'boolean') {
+        errors.push('allowMultiplePositions must be a boolean');
+      }
+    }
+
+    if (executionSettings.maxConcurrentPositions !== undefined) {
+      if (typeof executionSettings.maxConcurrentPositions !== 'number' || 
+          executionSettings.maxConcurrentPositions < 1 || 
+          executionSettings.maxConcurrentPositions > 10) {
+        errors.push('maxConcurrentPositions must be a number between 1 and 10');
+      }
+    }
+
+    if (executionSettings.requireExitBeforeEntry !== undefined) {
+      if (typeof executionSettings.requireExitBeforeEntry !== 'boolean') {
+        errors.push('requireExitBeforeEntry must be a boolean');
+      }
+    }
+
+    return errors;
+  }
+
   validateRiskManagement(riskManagement) {
     const errors = [];
 
@@ -157,7 +352,57 @@ class ValidationService {
     return errors;
   }
 
-  checkForConflicts(rules) {
+  checkForConflicts(entryRules, exitRules) {
+    const errors = [];
+    
+    // Handle legacy rules
+    if (Array.isArray(entryRules) && !Array.isArray(exitRules)) {
+      return this.checkForConflictsLegacy(entryRules);
+    }
+
+    // Check for conflicts within entry rules
+    if (entryRules && entryRules.length > 1) {
+      for (let i = 0; i < entryRules.length; i++) {
+        for (let j = i + 1; j < entryRules.length; j++) {
+          const rule1 = entryRules[i];
+          const rule2 = entryRules[j];
+
+          if (this.rulesHaveIdenticalConditions(rule1, rule2)) {
+            errors.push(`Conflict detected between entry rules "${rule1.name}" and "${rule2.name}" - identical conditions`);
+          }
+        }
+      }
+    }
+
+    // Check for conflicts within exit rules
+    if (exitRules && exitRules.length > 1) {
+      for (let i = 0; i < exitRules.length; i++) {
+        for (let j = i + 1; j < exitRules.length; j++) {
+          const rule1 = exitRules[i];
+          const rule2 = exitRules[j];
+
+          if (this.rulesHaveIdenticalConditions(rule1, rule2)) {
+            errors.push(`Conflict detected between exit rules "${rule1.name}" and "${rule2.name}" - identical conditions`);
+          }
+        }
+      }
+    }
+
+    // Check for conflicting entry and exit rules with identical conditions
+    if (entryRules && exitRules) {
+      for (const entryRule of entryRules) {
+        for (const exitRule of exitRules) {
+          if (this.rulesHaveIdenticalConditions(entryRule, exitRule)) {
+            errors.push(`Warning: Entry rule "${entryRule.name}" and exit rule "${exitRule.name}" have identical conditions - this may cause rapid entry/exit cycles`);
+          }
+        }
+      }
+    }
+
+    return errors;
+  }
+
+  checkForConflictsLegacy(rules) {
     const errors = [];
     
     if (!rules || rules.length < 2) return errors;
@@ -298,10 +543,16 @@ const validationService = new ValidationService();
 
 export const validateStrategy = validationService.validateStrategy.bind(validationService);
 export const validateRule = validationService.validateRule.bind(validationService);
+export const validateEntryRule = validationService.validateEntryRule.bind(validationService);
+export const validateExitRule = validationService.validateExitRule.bind(validationService);
 export const validateCondition = validationService.validateCondition.bind(validationService);
 export const validateAction = validationService.validateAction.bind(validationService);
+export const validateEntryAction = validationService.validateEntryAction.bind(validationService);
+export const validateExitAction = validationService.validateExitAction.bind(validationService);
+export const validateExecutionSettings = validationService.validateExecutionSettings.bind(validationService);
 export const validateRiskManagement = validationService.validateRiskManagement.bind(validationService);
 export const checkForConflicts = validationService.checkForConflicts.bind(validationService);
+export const checkForConflictsLegacy = validationService.checkForConflictsLegacy.bind(validationService);
 export const rulesHaveSimilarConditions = validationService.rulesHaveSimilarConditions.bind(validationService);
 export const validateForBacktest = validationService.validateForBacktest.bind(validationService);
 export const calculateMinimumDataPoints = validationService.calculateMinimumDataPoints.bind(validationService);

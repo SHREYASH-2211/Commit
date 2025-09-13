@@ -41,4 +41,14 @@ router.put('/:id',
 // Delete strategy
 router.delete('/:id', strategyController.deleteStrategy);
 
+// Entry rule management
+router.post('/:id/entry-rules', strategyController.addEntryRule);
+router.put('/:id/entry-rules/:ruleId', strategyController.updateEntryRule);
+router.delete('/:id/entry-rules/:ruleId', strategyController.deleteEntryRule);
+
+// Exit rule management
+router.post('/:id/exit-rules', strategyController.addExitRule);
+router.put('/:id/exit-rules/:ruleId', strategyController.updateExitRule);
+router.delete('/:id/exit-rules/:ruleId', strategyController.deleteExitRule);
+
 export default router;

@@ -63,10 +63,26 @@ class StrategyController {
   // Create new strategy
   async createStrategy(req, res) {
     try {
-      const { name, description, category, rules, riskManagement, tags } = req.body;
+      const { 
+        name, 
+        description, 
+        category, 
+        rules, 
+        entryRules, 
+        exitRules, 
+        riskManagement, 
+        executionSettings,
+        tags 
+      } = req.body;
 
       // Validate strategy structure
-      const validation = validateStrategy({ rules, riskManagement });
+      const validation = validateStrategy({ 
+        rules, 
+        entryRules, 
+        exitRules, 
+        riskManagement, 
+        executionSettings 
+      });
       if (!validation.isValid) {
         return res.status(400).json({
           success: false,
@@ -76,10 +92,20 @@ class StrategyController {
       }
 
       // Generate unique IDs for rules
-      const processedRules = rules.map(rule => ({
+      const processedRules = rules ? rules.map(rule => ({
         ...rule,
         id: rule.id || generateStrategyId()
-      }));
+      })) : [];
+
+      const processedEntryRules = entryRules ? entryRules.map(rule => ({
+        ...rule,
+        id: rule.id || generateStrategyId()
+      })) : [];
+
+      const processedExitRules = exitRules ? exitRules.map(rule => ({
+        ...rule,
+        id: rule.id || generateStrategyId()
+      })) : [];
 
       const strategy = new Strategy({
         userId: req.user.id,
@@ -87,7 +113,10 @@ class StrategyController {
         description,
         category,
         rules: processedRules,
+        entryRules: processedEntryRules,
+        exitRules: processedExitRules,
         riskManagement,
+        executionSettings,
         tags
       });
 
@@ -146,11 +175,28 @@ class StrategyController {
   // Update strategy
   async updateStrategy(req, res) {
     try {
-      const { name, description, category, rules, riskManagement, tags, isActive } = req.body;
+      const { 
+        name, 
+        description, 
+        category, 
+        rules, 
+        entryRules, 
+        exitRules, 
+        riskManagement, 
+        executionSettings,
+        tags, 
+        isActive 
+      } = req.body;
 
       // Validate strategy if rules are being updated
-      if (rules) {
-        const validation = validateStrategy({ rules, riskManagement });
+      if (rules || entryRules || exitRules) {
+        const validation = validateStrategy({ 
+          rules, 
+          entryRules, 
+          exitRules, 
+          riskManagement, 
+          executionSettings 
+        });
         if (!validation.isValid) {
           return res.status(400).json({
             success: false,
@@ -170,7 +216,20 @@ class StrategyController {
           id: rule.id || generateStrategyId()
         }));
       }
+      if (entryRules) {
+        updateData.entryRules = entryRules.map(rule => ({
+          ...rule,
+          id: rule.id || generateStrategyId()
+        }));
+      }
+      if (exitRules) {
+        updateData.exitRules = exitRules.map(rule => ({
+          ...rule,
+          id: rule.id || generateStrategyId()
+        }));
+      }
       if (riskManagement) updateData.riskManagement = riskManagement;
+      if (executionSettings) updateData.executionSettings = executionSettings;
       if (tags) updateData.tags = tags;
       if (isActive !== undefined) updateData.isActive = isActive;
 
@@ -315,6 +374,10 @@ class StrategyController {
           { id: '1h', name: '1 Hour' },
           { id: '4h', name: '4 Hours' },
           { id: '1d', name: '1 Day' }
+        ],
+        ruleTypes: [
+          { id: 'entry', name: 'Entry Rule', description: 'Rules for entering positions' },
+          { id: 'exit', name: 'Exit Rule', description: 'Rules for exiting positions' }
         ]
       };
 
@@ -326,6 +389,276 @@ class StrategyController {
       res.status(500).json({
         success: false,
         message: 'Failed to fetch components',
+        error: error.message
+      });
+    }
+  }
+
+  // Add entry rule to strategy
+  async addEntryRule(req, res) {
+    try {
+      const { rule } = req.body;
+      const strategyId = req.params.id;
+
+      const strategy = await Strategy.findOne({ _id: strategyId, userId: req.user.id });
+      if (!strategy) {
+        return res.status(404).json({
+          success: false,
+          message: 'Strategy not found'
+        });
+      }
+
+      // Validate entry rule
+      const validation = validateEntryRule(rule, 0);
+      if (validation.length > 0) {
+        return res.status(400).json({
+          success: false,
+          message: 'Invalid entry rule',
+          errors: validation
+        });
+      }
+
+      const newRule = {
+        ...rule,
+        id: rule.id || generateStrategyId()
+      };
+
+      strategy.entryRules.push(newRule);
+      await strategy.save();
+
+      res.status(200).json({
+        success: true,
+        message: 'Entry rule added successfully',
+        data: newRule
+      });
+    } catch (error) {
+      res.status(500).json({
+        success: false,
+        message: 'Failed to add entry rule',
+        error: error.message
+      });
+    }
+  }
+
+  // Add exit rule to strategy
+  async addExitRule(req, res) {
+    try {
+      const { rule } = req.body;
+      const strategyId = req.params.id;
+
+      const strategy = await Strategy.findOne({ _id: strategyId, userId: req.user.id });
+      if (!strategy) {
+        return res.status(404).json({
+          success: false,
+          message: 'Strategy not found'
+        });
+      }
+
+      // Validate exit rule
+      const validation = validateExitRule(rule, 0);
+      if (validation.length > 0) {
+        return res.status(400).json({
+          success: false,
+          message: 'Invalid exit rule',
+          errors: validation
+        });
+      }
+
+      const newRule = {
+        ...rule,
+        id: rule.id || generateStrategyId()
+      };
+
+      strategy.exitRules.push(newRule);
+      await strategy.save();
+
+      res.status(200).json({
+        success: true,
+        message: 'Exit rule added successfully',
+        data: newRule
+      });
+    } catch (error) {
+      res.status(500).json({
+        success: false,
+        message: 'Failed to add exit rule',
+        error: error.message
+      });
+    }
+  }
+
+  // Update entry rule
+  async updateEntryRule(req, res) {
+    try {
+      const { rule } = req.body;
+      const { id, ruleId } = req.params;
+
+      const strategy = await Strategy.findOne({ _id: id, userId: req.user.id });
+      if (!strategy) {
+        return res.status(404).json({
+          success: false,
+          message: 'Strategy not found'
+        });
+      }
+
+      const ruleIndex = strategy.entryRules.findIndex(r => r.id === ruleId);
+      if (ruleIndex === -1) {
+        return res.status(404).json({
+          success: false,
+          message: 'Entry rule not found'
+        });
+      }
+
+      // Validate entry rule
+      const validation = validateEntryRule(rule, 0);
+      if (validation.length > 0) {
+        return res.status(400).json({
+          success: false,
+          message: 'Invalid entry rule',
+          errors: validation
+        });
+      }
+
+      strategy.entryRules[ruleIndex] = {
+        ...rule,
+        id: ruleId
+      };
+      await strategy.save();
+
+      res.status(200).json({
+        success: true,
+        message: 'Entry rule updated successfully',
+        data: strategy.entryRules[ruleIndex]
+      });
+    } catch (error) {
+      res.status(500).json({
+        success: false,
+        message: 'Failed to update entry rule',
+        error: error.message
+      });
+    }
+  }
+
+  // Update exit rule
+  async updateExitRule(req, res) {
+    try {
+      const { rule } = req.body;
+      const { id, ruleId } = req.params;
+
+      const strategy = await Strategy.findOne({ _id: id, userId: req.user.id });
+      if (!strategy) {
+        return res.status(404).json({
+          success: false,
+          message: 'Strategy not found'
+        });
+      }
+
+      const ruleIndex = strategy.exitRules.findIndex(r => r.id === ruleId);
+      if (ruleIndex === -1) {
+        return res.status(404).json({
+          success: false,
+          message: 'Exit rule not found'
+        });
+      }
+
+      // Validate exit rule
+      const validation = validateExitRule(rule, 0);
+      if (validation.length > 0) {
+        return res.status(400).json({
+          success: false,
+          message: 'Invalid exit rule',
+          errors: validation
+        });
+      }
+
+      strategy.exitRules[ruleIndex] = {
+        ...rule,
+        id: ruleId
+      };
+      await strategy.save();
+
+      res.status(200).json({
+        success: true,
+        message: 'Exit rule updated successfully',
+        data: strategy.exitRules[ruleIndex]
+      });
+    } catch (error) {
+      res.status(500).json({
+        success: false,
+        message: 'Failed to update exit rule',
+        error: error.message
+      });
+    }
+  }
+
+  // Delete entry rule
+  async deleteEntryRule(req, res) {
+    try {
+      const { id, ruleId } = req.params;
+
+      const strategy = await Strategy.findOne({ _id: id, userId: req.user.id });
+      if (!strategy) {
+        return res.status(404).json({
+          success: false,
+          message: 'Strategy not found'
+        });
+      }
+
+      const ruleIndex = strategy.entryRules.findIndex(r => r.id === ruleId);
+      if (ruleIndex === -1) {
+        return res.status(404).json({
+          success: false,
+          message: 'Entry rule not found'
+        });
+      }
+
+      strategy.entryRules.splice(ruleIndex, 1);
+      await strategy.save();
+
+      res.status(200).json({
+        success: true,
+        message: 'Entry rule deleted successfully'
+      });
+    } catch (error) {
+      res.status(500).json({
+        success: false,
+        message: 'Failed to delete entry rule',
+        error: error.message
+      });
+    }
+  }
+
+  // Delete exit rule
+  async deleteExitRule(req, res) {
+    try {
+      const { id, ruleId } = req.params;
+
+      const strategy = await Strategy.findOne({ _id: id, userId: req.user.id });
+      if (!strategy) {
+        return res.status(404).json({
+          success: false,
+          message: 'Strategy not found'
+        });
+      }
+
+      const ruleIndex = strategy.exitRules.findIndex(r => r.id === ruleId);
+      if (ruleIndex === -1) {
+        return res.status(404).json({
+          success: false,
+          message: 'Exit rule not found'
+        });
+      }
+
+      strategy.exitRules.splice(ruleIndex, 1);
+      await strategy.save();
+
+      res.status(200).json({
+        success: true,
+        message: 'Exit rule deleted successfully'
+      });
+    } catch (error) {
+      res.status(500).json({
+        success: false,
+        message: 'Failed to delete exit rule',
         error: error.message
       });
     }

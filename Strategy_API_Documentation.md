@@ -148,7 +148,7 @@ All strategy endpoints require authentication. Use JWT Bearer token in the Autho
 #### Create New Strategy
 - **POST** `/api/v1/strategies`
 - **Headers:** `Authorization: Bearer <token>`
-- **Body:**
+- **Body (Legacy Format):**
 ```json
 {
   "name": "My Custom Trading Strategy",
@@ -210,6 +210,77 @@ All strategy endpoints require authentication. Use JWT Bearer token in the Autho
 }
 ```
 
+- **Body (New Entry/Exit Format):**
+```json
+{
+  "name": "Modern Entry/Exit Strategy",
+  "description": "Strategy using separate entry and exit rules",
+  "category": "trend_following",
+  "entryRules": [
+    {
+      "name": "SMA Golden Cross Entry",
+      "conditions": [
+        {
+          "indicator": "sma",
+          "operator": "crosses_above",
+          "value": {
+            "indicator": "sma",
+            "params": { "period": 50 }
+          },
+          "params": { "period": 20 },
+          "timeframe": "1d"
+        }
+      ],
+      "logicalOperator": "AND",
+      "action": {
+        "type": "buy",
+        "quantity": "half",
+        "stopLoss": 5,
+        "takeProfit": 15
+      },
+      "priority": 1,
+      "isActive": true
+    }
+  ],
+  "exitRules": [
+    {
+      "name": "SMA Death Cross Exit",
+      "conditions": [
+        {
+          "indicator": "sma",
+          "operator": "crosses_below",
+          "value": {
+            "indicator": "sma",
+            "params": { "period": 50 }
+          },
+          "params": { "period": 20 },
+          "timeframe": "1d"
+        }
+      ],
+      "logicalOperator": "AND",
+      "action": {
+        "type": "sell",
+        "quantity": "all"
+      },
+      "priority": 1,
+      "isActive": true
+    }
+  ],
+  "riskManagement": {
+    "maxPositionSize": 20,
+    "maxDailyLoss": 3,
+    "stopLossEnabled": true,
+    "takeProfitEnabled": true
+  },
+  "executionSettings": {
+    "allowMultiplePositions": false,
+    "maxConcurrentPositions": 1,
+    "requireExitBeforeEntry": true
+  },
+  "tags": ["sma", "crossover", "entry-exit"]
+}
+```
+
 #### Get Single Strategy
 - **GET** `/api/v1/strategies/{strategyId}`
 - **Headers:** `Authorization: Bearer <token>`
@@ -223,9 +294,87 @@ All strategy endpoints require authentication. Use JWT Bearer token in the Autho
 - **DELETE** `/api/v1/strategies/{strategyId}`
 - **Headers:** `Authorization: Bearer <token>`
 
+### 5. Entry/Exit Rule Management
+
+#### Add Entry Rule
+- **POST** `/api/v1/strategies/{strategyId}/entry-rules`
+- **Headers:** `Authorization: Bearer <token>`
+- **Body:**
+```json
+{
+  "rule": {
+    "name": "RSI Oversold Entry",
+    "conditions": [
+      {
+        "indicator": "rsi",
+        "operator": "<",
+        "value": 30,
+        "params": { "period": 14 },
+        "timeframe": "1h"
+      }
+    ],
+    "logicalOperator": "AND",
+    "action": {
+      "type": "buy",
+      "quantity": "half",
+      "stopLoss": 3,
+      "takeProfit": 6
+    },
+    "priority": 1,
+    "isActive": true
+  }
+}
+```
+
+#### Add Exit Rule
+- **POST** `/api/v1/strategies/{strategyId}/exit-rules`
+- **Headers:** `Authorization: Bearer <token>`
+- **Body:**
+```json
+{
+  "rule": {
+    "name": "RSI Overbought Exit",
+    "conditions": [
+      {
+        "indicator": "rsi",
+        "operator": ">",
+        "value": 70,
+        "params": { "period": 14 },
+        "timeframe": "1h"
+      }
+    ],
+    "logicalOperator": "AND",
+    "action": {
+      "type": "sell",
+      "quantity": "all"
+    },
+    "priority": 1,
+    "isActive": true
+  }
+}
+```
+
+#### Update Entry Rule
+- **PUT** `/api/v1/strategies/{strategyId}/entry-rules/{ruleId}`
+- **Headers:** `Authorization: Bearer <token>`
+- **Body:** Same structure as add entry rule
+
+#### Update Exit Rule
+- **PUT** `/api/v1/strategies/{strategyId}/exit-rules/{ruleId}`
+- **Headers:** `Authorization: Bearer <token>`
+- **Body:** Same structure as add exit rule
+
+#### Delete Entry Rule
+- **DELETE** `/api/v1/strategies/{strategyId}/entry-rules/{ruleId}`
+- **Headers:** `Authorization: Bearer <token>`
+
+#### Delete Exit Rule
+- **DELETE** `/api/v1/strategies/{strategyId}/exit-rules/{ruleId}`
+- **Headers:** `Authorization: Bearer <token>`
+
 ## Strategy Structure
 
-### Rule Structure
+### Legacy Rule Structure
 ```json
 {
   "name": "Rule Name",
@@ -253,6 +402,60 @@ All strategy endpoints require authentication. Use JWT Bearer token in the Autho
 }
 ```
 
+### Entry Rule Structure
+```json
+{
+  "name": "Entry Rule Name",
+  "conditions": [
+    {
+      "indicator": "rsi|sma|ema|macd|bollinger_bands|price|volume",
+      "operator": ">|<|>=|<=|==|crosses_above|crosses_below",
+      "value": 30,
+      "params": {
+        "period": 14
+      },
+      "timeframe": "1m|5m|15m|1h|4h|1d"
+    }
+  ],
+  "logicalOperator": "AND|OR",
+  "action": {
+    "type": "buy",
+    "quantity": "all|half|custom",
+    "customQuantity": 1000,
+    "stopLoss": 5,
+    "takeProfit": 10
+  },
+  "priority": 1,
+  "isActive": true
+}
+```
+
+### Exit Rule Structure
+```json
+{
+  "name": "Exit Rule Name",
+  "conditions": [
+    {
+      "indicator": "rsi|sma|ema|macd|bollinger_bands|price|volume",
+      "operator": ">|<|>=|<=|==|crosses_above|crosses_below",
+      "value": 70,
+      "params": {
+        "period": 14
+      },
+      "timeframe": "1m|5m|15m|1h|4h|1d"
+    }
+  ],
+  "logicalOperator": "AND|OR",
+  "action": {
+    "type": "sell",
+    "quantity": "all|half|custom",
+    "customQuantity": 1000
+  },
+  "priority": 1,
+  "isActive": true
+}
+```
+
 ### Risk Management Structure
 ```json
 {
@@ -260,6 +463,29 @@ All strategy endpoints require authentication. Use JWT Bearer token in the Autho
   "maxDailyLoss": 5,
   "stopLossEnabled": true,
   "takeProfitEnabled": true
+}
+```
+
+### Execution Settings Structure
+```json
+{
+  "allowMultiplePositions": false,
+  "maxConcurrentPositions": 1,
+  "requireExitBeforeEntry": true
+}
+```
+
+### Position Tracking Structure
+```json
+{
+  "currentPosition": {
+    "isOpen": false,
+    "entryPrice": 0,
+    "entryTimestamp": null,
+    "shares": 0,
+    "stopLossPrice": 0,
+    "takeProfitPrice": 0
+  }
 }
 ```
 
@@ -349,7 +575,101 @@ All strategy endpoints require authentication. Use JWT Bearer token in the Autho
 
 ## Sample Strategy Examples
 
-### 1. Simple RSI Strategy
+### 1. Modern Entry/Exit RSI Strategy
+```json
+{
+  "name": "RSI Mean Reversion Entry/Exit",
+  "description": "Modern entry/exit structure for RSI mean reversion",
+  "category": "mean_reversion",
+  "entryRules": [
+    {
+      "name": "RSI Oversold Entry",
+      "conditions": [
+        {
+          "indicator": "rsi",
+          "operator": "<",
+          "value": 30,
+          "params": { "period": 14 },
+          "timeframe": "1h"
+        },
+        {
+          "indicator": "price",
+          "operator": ">",
+          "value": {
+            "indicator": "sma",
+            "params": { "period": 200 }
+          },
+          "timeframe": "1h"
+        }
+      ],
+      "logicalOperator": "AND",
+      "action": {
+        "type": "buy",
+        "quantity": "custom",
+        "customQuantity": 1000,
+        "stopLoss": 3,
+        "takeProfit": 6
+      },
+      "priority": 1,
+      "isActive": true
+    }
+  ],
+  "exitRules": [
+    {
+      "name": "RSI Overbought Exit",
+      "conditions": [
+        {
+          "indicator": "rsi",
+          "operator": ">",
+          "value": 70,
+          "params": { "period": 14 },
+          "timeframe": "1h"
+        }
+      ],
+      "logicalOperator": "AND",
+      "action": {
+        "type": "sell",
+        "quantity": "all"
+      },
+      "priority": 1,
+      "isActive": true
+    },
+    {
+      "name": "RSI Neutral Exit",
+      "conditions": [
+        {
+          "indicator": "rsi",
+          "operator": ">",
+          "value": 50,
+          "params": { "period": 14 },
+          "timeframe": "1h"
+        }
+      ],
+      "logicalOperator": "AND",
+      "action": {
+        "type": "sell",
+        "quantity": "half"
+      },
+      "priority": 2,
+      "isActive": true
+    }
+  ],
+  "riskManagement": {
+    "maxPositionSize": 15,
+    "maxDailyLoss": 2,
+    "stopLossEnabled": true,
+    "takeProfitEnabled": true
+  },
+  "executionSettings": {
+    "allowMultiplePositions": false,
+    "maxConcurrentPositions": 1,
+    "requireExitBeforeEntry": true
+  },
+  "tags": ["rsi", "mean-reversion", "entry-exit"]
+}
+```
+
+### 2. Legacy RSI Strategy
 ```json
 {
   "name": "RSI Mean Reversion",
