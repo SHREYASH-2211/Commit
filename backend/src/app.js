@@ -2,6 +2,7 @@ import express from "express";
 import cors from "cors";
 import cookieParser from "cookie-parser";
 import backtestRoutes from "./routes/backtest.routes.js";
+import geminiRouter from './gemini/gemini.js';
 const app   = express();
 
 app.use(cors({
@@ -22,6 +23,7 @@ app.use("/api/v1/strategies", strategyRouter);
 //Routes declaration
 app.use("/api/v1/users", userRouter);
 app.use("/api/v1/backtest", backtestRoutes);
+app.use('/api/gemini', geminiRouter);
 //http://localhost:8000/api/v1/users/register
 
 export default app;

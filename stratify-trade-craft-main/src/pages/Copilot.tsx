@@ -1,20 +1,62 @@
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
-import { MessageSquare, Send, Bot, User, Lightbulb, TrendingUp, AlertTriangle } from 'lucide-react';
+import { Send, Bot, User, Lightbulb, TrendingUp, AlertTriangle } from 'lucide-react';
 
-const Copilot: React.FC = () => {
+const StratifyAI: React.FC = () => {
   const [message, setMessage] = useState('');
   const [messages, setMessages] = useState([
     {
       id: 1,
-      type: 'bot',
-      content: "Hello! I'm your Strategy Copilot. I can help you optimize your trading strategies, analyze market conditions, and suggest improvements. What would you like to work on today?",
-      timestamp: '10:00 AM',
+      type: 'bot' as const,
+      content: "Hello! I'm Stratify Copilot. I can help you optimize trading strategies, analyze market conditions, and suggest improvements. What would you like to work on today?",
+      timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
     },
   ]);
+  const chatRef = useRef<HTMLDivElement>(null);
+
+  const sendMessageToAPI = async (text: string) => {
+    if (!text.trim()) return;
+
+    const newUserMessage = {
+      id: messages.length + 1,
+      type: 'user' as const,
+      content: text,
+      timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+    };
+    setMessages(prev => [...prev, newUserMessage]);
+    setMessage('');
+
+    try {
+      const res = await fetch('/api/gemini', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ prompt: text }),
+      });
+      const data = await res.json();
+      const botMessage = {
+        id: messages.length + 2,
+        type: 'bot' as const,
+        content: data?.text || "I'm having trouble generating a response.",
+        timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+      };
+      setMessages(prev => [...prev, botMessage]);
+    } catch (err) {
+      console.error(err);
+      setMessages(prev => [...prev, {
+        id: messages.length + 2,
+        type: 'bot' as const,
+        content: "Sorry, I'm having trouble connecting to the server. Please try again later.",
+        timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+      }]);
+    }
+  };
+
+  useEffect(() => {
+    if (chatRef.current) chatRef.current.scrollTop = chatRef.current.scrollHeight;
+  }, [messages]);
 
   const suggestions = [
     {
@@ -37,113 +79,62 @@ const Copilot: React.FC = () => {
     },
   ];
 
-  const handleSendMessage = () => {
-    if (!message.trim()) return;
-
-    const newUserMessage = {
-      id: messages.length + 1,
-      type: 'user' as const,
-      content: message,
-      timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-    };
-
-    const botResponse = {
-      id: messages.length + 2,
-      type: 'bot' as const,
-      content: "I understand your query. Based on your trading history and current market conditions, I recommend adjusting your position sizing and implementing a trailing stop loss. Would you like me to create a detailed plan?",
-      timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-    };
-
-    setMessages(prev => [...prev, newUserMessage, botResponse]);
-    setMessage('');
-  };
-
   const handleSuggestionClick = (suggestion: typeof suggestions[0]) => {
-    const suggestionMessage = {
-      id: messages.length + 1,
-      type: 'user' as const,
-      content: suggestion.description,
-      timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-    };
-
-    const responses: Record<string, string> = {
-      optimize_ma: "Based on your historical data, I suggest using a 12-day and 26-day EMA combination instead of your current 10-20 setup. This could improve your win rate by approximately 8.5% while reducing false signals.",
-      risk_assessment: "Your current portfolio shows a maximum drawdown of 15.3%. I recommend implementing position sizing based on the Kelly Criterion and adding a portfolio-wide stop loss at 10% to better manage risk.",
-      market_analysis: "Current market conditions show high volatility in the tech sector with strong momentum in energy stocks. Consider rotating 30% of your portfolio towards defensive sectors and increasing your cash position to 15%.",
-    };
-
-    const botResponse = {
-      id: messages.length + 2,
-      type: 'bot' as const,
-      content: responses[suggestion.action] || "Let me analyze that for you...",
-      timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-    };
-
-    setMessages(prev => [...prev, suggestionMessage, botResponse]);
+    sendMessageToAPI(suggestion.description);
   };
 
   return (
-    <div className="flex-1 space-y-6 p-6">
-      <div>
-        <h1 className="text-3xl font-bold">Strategy Copilot</h1>
-        <p className="text-muted-foreground">
-          AI-powered assistant for strategy optimization and market insights
-        </p>
-      </div>
+    <div className="stratify-container">
+      <style>{`
+        .stratify-container { padding: 2rem; font-family: sans-serif; }
+        .chat-card { height: 600px; display: flex; flex-direction: column; }
+        .messages { flex: 1; overflow-y: auto; margin-bottom: 1rem; display: flex; flex-direction: column; gap: 0.5rem; }
+        .message { max-width: 75%; padding: 0.5rem 1rem; border-radius: 0.5rem; font-size: 0.875rem; }
+        .bot-message { background-color: #f3f3f3; color: #333; align-self: flex-start; }
+        .user-message { background-color: #3b82f6; color: #fff; align-self: flex-end; }
+        .chat-input { display: flex; gap: 0.5rem; margin-top: auto; }
+        .suggestions { display: flex; flex-direction: column; gap: 0.5rem; margin-top: 1rem; }
+      `}</style>
 
-      <div className="grid gap-6 lg:grid-cols-4">
-        {/* Chat Interface */}
-        <div className="lg:col-span-3">
-          <Card className="h-[600px] flex flex-col">
+      <h1 className="text-3xl font-bold mb-4">Stratify AI Copilot</h1>
+
+      <div style={{ display: 'flex', gap: '2rem' }}>
+        <div style={{ flex: 3 }}>
+          <Card className="chat-card">
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <Bot className="h-5 w-5" />
-                Strategy Copilot
+                Stratify Copilot
                 <Badge variant="secondary">AI Assistant</Badge>
               </CardTitle>
               <CardDescription>
                 Get personalized trading advice and strategy optimization
               </CardDescription>
             </CardHeader>
-            
+
             <CardContent className="flex-1 flex flex-col">
-              {/* Messages */}
-              <div className="flex-1 space-y-4 overflow-y-auto mb-4">
-                {messages.map((msg) => (
+              <div className="messages" ref={chatRef}>
+                {messages.map(msg => (
                   <div
                     key={msg.id}
-                    className={`flex ${msg.type === 'user' ? 'justify-end' : 'justify-start'}`}
+                    className={`message ${msg.type === 'user' ? 'user-message' : 'bot-message'}`}
                   >
-                    <div
-                      className={`max-w-[80%] rounded-lg p-3 ${
-                        msg.type === 'user'
-                          ? 'bg-primary text-primary-foreground'
-                          : 'bg-muted text-muted-foreground'
-                      }`}
-                    >
-                      <div className="flex items-center gap-2 mb-1">
-                        {msg.type === 'bot' ? (
-                          <Bot className="h-4 w-4" />
-                        ) : (
-                          <User className="h-4 w-4" />
-                        )}
-                        <span className="text-xs">{msg.timestamp}</span>
-                      </div>
-                      <p className="text-sm">{msg.content}</p>
+                    <div style={{ fontSize: '0.7rem', marginBottom: '0.25rem' }}>
+                      {msg.timestamp}
                     </div>
+                    {msg.content}
                   </div>
                 ))}
               </div>
 
-              {/* Input */}
-              <div className="flex gap-2">
+              <div className="chat-input">
                 <Input
-                  placeholder="Ask me about strategy optimization, risk management, or market analysis..."
+                  placeholder="Ask about strategy, risk, or market insights..."
                   value={message}
-                  onChange={(e) => setMessage(e.target.value)}
-                  onKeyPress={(e) => e.key === 'Enter' && handleSendMessage()}
+                  onChange={e => setMessage(e.target.value)}
+                  onKeyPress={e => e.key === 'Enter' && sendMessageToAPI(message)}
                 />
-                <Button onClick={handleSendMessage}>
+                <Button onClick={() => sendMessageToAPI(message)}>
                   <Send className="h-4 w-4" />
                 </Button>
               </div>
@@ -151,53 +142,28 @@ const Copilot: React.FC = () => {
           </Card>
         </div>
 
-        {/* Suggestions */}
-        <div className="space-y-4">
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-lg">Quick Actions</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-3">
-              {suggestions.map((suggestion, index) => (
-                <Button
-                  key={index}
-                  variant="outline"
-                  className="w-full justify-start h-auto p-3 text-left"
-                  onClick={() => handleSuggestionClick(suggestion)}
-                >
-                  <div className="flex items-start gap-3">
-                    <suggestion.icon className="h-5 w-5 mt-0.5 text-muted-foreground" />
-                    <div>
-                      <p className="font-medium text-sm">{suggestion.title}</p>
-                      <p className="text-xs text-muted-foreground">
-                        {suggestion.description}
-                      </p>
-                    </div>
+        <div style={{ flex: 1 }}>
+          <div className="suggestions">
+            {suggestions.map((s, i) => (
+              <Button
+                key={i}
+                variant="outline"
+                onClick={() => handleSuggestionClick(s)}
+              >
+                <div className="flex items-center gap-2">
+                  <s.icon className="h-4 w-4" />
+                  <div>
+                    <p className="font-medium text-sm">{s.title}</p>
+                    <p className="text-xs text-muted-foreground">{s.description}</p>
                   </div>
-                </Button>
-              ))}
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-lg">Recent Insights</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-3">
-              <div className="space-y-2">
-                <Badge variant="outline">Market Alert</Badge>
-                <p className="text-sm">High volatility detected in your watchlist stocks</p>
-              </div>
-              <div className="space-y-2">
-                <Badge variant="outline">Strategy Tip</Badge>
-                <p className="text-sm">Consider rebalancing your portfolio allocation</p>
-              </div>
-            </CardContent>
-          </Card>
+                </div>
+              </Button>
+            ))}
+          </div>
         </div>
       </div>
     </div>
   );
 };
 
-export default Copilot;
+export default StratifyAI;
