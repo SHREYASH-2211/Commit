@@ -1,6 +1,6 @@
 // server/controllers/strategyController.js
 import Strategy from '../models/strategy.model.js';
-import { validateStrategy } from '../services/validationService.js';
+import { validateStrategy, validateEntryRule, validateExitRule } from '../services/validationService.js';
 import { generateStrategyId } from '../utils/helpers.js';
 
 class StrategyController {
@@ -397,8 +397,26 @@ class StrategyController {
   // Add entry rule to strategy
   async addEntryRule(req, res) {
     try {
+      // Check if req.body exists
+      if (!req.body) {
+        return res.status(400).json({
+          success: false,
+          message: 'Request body is required',
+          error: 'No request body provided'
+        });
+      }
+
       const { rule } = req.body;
       const strategyId = req.params.id;
+
+      // Check if rule is provided
+      if (!rule) {
+        return res.status(400).json({
+          success: false,
+          message: 'Rule is required',
+          error: 'No rule provided in request body'
+        });
+      }
 
       const strategy = await Strategy.findOne({ _id: strategyId, userId: req.user.id });
       if (!strategy) {
@@ -443,8 +461,26 @@ class StrategyController {
   // Add exit rule to strategy
   async addExitRule(req, res) {
     try {
+      // Check if req.body exists
+      if (!req.body) {
+        return res.status(400).json({
+          success: false,
+          message: 'Request body is required',
+          error: 'No request body provided'
+        });
+      }
+
       const { rule } = req.body;
       const strategyId = req.params.id;
+
+      // Check if rule is provided
+      if (!rule) {
+        return res.status(400).json({
+          success: false,
+          message: 'Rule is required',
+          error: 'No rule provided in request body'
+        });
+      }
 
       const strategy = await Strategy.findOne({ _id: strategyId, userId: req.user.id });
       if (!strategy) {
@@ -489,8 +525,26 @@ class StrategyController {
   // Update entry rule
   async updateEntryRule(req, res) {
     try {
+      // Check if req.body exists
+      if (!req.body) {
+        return res.status(400).json({
+          success: false,
+          message: 'Request body is required',
+          error: 'No request body provided'
+        });
+      }
+
       const { rule } = req.body;
       const { id, ruleId } = req.params;
+
+      // Check if rule is provided
+      if (!rule) {
+        return res.status(400).json({
+          success: false,
+          message: 'Rule is required',
+          error: 'No rule provided in request body'
+        });
+      }
 
       const strategy = await Strategy.findOne({ _id: id, userId: req.user.id });
       if (!strategy) {
@@ -541,8 +595,26 @@ class StrategyController {
   // Update exit rule
   async updateExitRule(req, res) {
     try {
+      // Check if req.body exists
+      if (!req.body) {
+        return res.status(400).json({
+          success: false,
+          message: 'Request body is required',
+          error: 'No request body provided'
+        });
+      }
+
       const { rule } = req.body;
       const { id, ruleId } = req.params;
+
+      // Check if rule is provided
+      if (!rule) {
+        return res.status(400).json({
+          success: false,
+          message: 'Rule is required',
+          error: 'No rule provided in request body'
+        });
+      }
 
       const strategy = await Strategy.findOne({ _id: id, userId: req.user.id });
       if (!strategy) {
