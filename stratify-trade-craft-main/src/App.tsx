@@ -18,6 +18,7 @@ import Portfolio from "./pages/Portfolio";
 import Copilot from "./pages/Copilot";
 import FundManagement from "./pages/FundManagement";
 import Wishlist from "./pages/Wishlist";
+import Assistance from "./pages/Assistance"; // ✅ NEW
 import Auth from "./pages/Auth";
 import NotFound from "./pages/NotFound";
 
@@ -26,8 +27,9 @@ const queryClient = new QueryClient();
 const AppContent = () => {
   const { isAuthenticated } = useAuth();
   const location = useLocation();
-  const isLandingPage = location.pathname === '/' && !isAuthenticated;
-  const isAuthPage = location.pathname === '/login' || location.pathname === '/signup';
+  const isLandingPage = location.pathname === "/" && !isAuthenticated;
+  const isAuthPage =
+    location.pathname === "/login" || location.pathname === "/signup";
 
   if (isLandingPage || isAuthPage) {
     return (
@@ -62,6 +64,7 @@ const AppContent = () => {
             <Route path="/copilot" element={<Copilot />} />
             <Route path="/fund-management" element={<FundManagement />} />
             <Route path="/wishlist" element={<Wishlist />} />
+            <Route path="/assistance" element={<Assistance />} /> {/* ✅ NEW */}
             <Route path="*" element={<NotFound />} />
           </Routes>
         </div>

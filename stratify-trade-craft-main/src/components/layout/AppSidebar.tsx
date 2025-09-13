@@ -1,6 +1,6 @@
-import React from 'react';
-import { NavLink, useLocation } from 'react-router-dom';
-import { useAuth } from '@/contexts/AuthContext';
+import React from "react";
+import { NavLink, useLocation, useNavigate } from "react-router-dom";
+import { useAuth } from "@/contexts/AuthContext";
 import {
   TrendingUp,
   Bot,
@@ -12,7 +12,8 @@ import {
   Settings,
   Heart,
   LogOut,
-} from 'lucide-react';
+  LifeBuoy,   // Assistance icon
+} from "lucide-react";
 import {
   Sidebar,
   SidebarContent,
@@ -25,70 +26,41 @@ import {
   SidebarHeader,
   SidebarFooter,
   useSidebar,
-} from '@/components/ui/sidebar';
-import { Button } from '@/components/ui/button';
+} from "@/components/ui/sidebar";
+import { Button } from "@/components/ui/button";
 
 const navigationItems = [
-  {
-    title: 'Trading Engine',
-    url: '/dashboard',
-    icon: TrendingUp,
-  },
-  {
-    title: 'Strategy Builder',
-    url: '/strategy-builder',
-    icon: Bot,
-  },
-  {
-    title: 'Backtesting Engine',
-    url: '/backtesting',
-    icon: BarChart3,
-  },
-  {
-    title: 'Social Trading',
-    url: '/social-trading',
-    icon: Users,
-  },
-  {
-    title: 'Reports',
-    url: '/reports',
-    icon: FileText,
-  },
-  {
-    title: 'Portfolio',
-    url: '/portfolio',
-    icon: Briefcase,
-  },
-  {
-    title: 'Strategy Copilot',
-    url: '/copilot',
-    icon: MessageSquare,
-  },
-  {
-    title: 'Fund Management',
-    url: '/fund-management',
-    icon: Settings,
-  },
-  {
-    title: 'Wishlist',
-    url: '/wishlist',
-    icon: Heart,
-  },
+  { title: "Trading Engine", url: "/dashboard", icon: TrendingUp },
+  { title: "Strategy Builder", url: "/strategy-builder", icon: Bot },
+  { title: "Backtesting Engine", url: "/backtesting", icon: BarChart3 },
+  { title: "Social Trading", url: "/social-trading", icon: Users },
+  { title: "Reports", url: "/reports", icon: FileText },
+  { title: "Portfolio", url: "/portfolio", icon: Briefcase },
+  { title: "Strategy Copilot", url: "/copilot", icon: MessageSquare },
+  { title: "Fund Management", url: "/fund-management", icon: Settings },
+  { title: "Wishlist", url: "/wishlist", icon: Heart },
+  { title: "Assistance", url: "/assistance", icon: LifeBuoy }, // ✅ New item
 ];
 
 export function AppSidebar() {
   const { state } = useSidebar();
   const location = useLocation();
+  const navigate = useNavigate();
   const { logout, user } = useAuth();
   const currentPath = location.pathname;
   const isCollapsed = state === "collapsed";
 
-  const isActive = (path: string) => currentPath === path;
   const getNavCls = ({ isActive }: { isActive: boolean }) =>
     isActive ? "bg-sidebar-accent text-sidebar-accent-foreground" : "";
 
+  const handleLogout = () => {
+    logout();        // clear user
+    navigate("/login"); // redirect
+  };
+
   return (
     <Sidebar className={isCollapsed ? "w-14" : "w-60"} collapsible="icon">
+      {/* Logo */}
       <SidebarHeader className="border-b border-sidebar-border p-4">
         <div className="flex items-center gap-2">
           <div className="flex items-center justify-center w-8 h-8 rounded-lg gradient-primary">
@@ -100,6 +72,7 @@ export function AppSidebar() {
         </div>
       </SidebarHeader>
 
+      {/* Nav Items */}
       <SidebarContent>
         <SidebarGroup>
           <SidebarGroupLabel>Trading Platform</SidebarGroupLabel>
@@ -108,11 +81,7 @@ export function AppSidebar() {
               {navigationItems.map((item) => (
                 <SidebarMenuItem key={item.title}>
                   <SidebarMenuButton asChild>
-                    <NavLink 
-                      to={item.url} 
-                      end 
-                      className={getNavCls}
-                    >
+                    <NavLink to={item.url} end className={getNavCls}>
                       <item.icon className="h-4 w-4" />
                       {!isCollapsed && <span>{item.title}</span>}
                     </NavLink>
@@ -124,6 +93,7 @@ export function AppSidebar() {
         </SidebarGroup>
       </SidebarContent>
 
+      {/* Footer */}
       <SidebarFooter className="border-t border-sidebar-border p-4">
         {!isCollapsed && user && (
           <div className="mb-2">
@@ -131,10 +101,10 @@ export function AppSidebar() {
             <p className="text-xs text-muted-foreground">{user.email}</p>
           </div>
         )}
-        <Button 
-          variant="ghost" 
+        <Button
+          variant="ghost"
           size="sm"
-          onClick={logout}
+          onClick={handleLogout}
           className="w-full justify-start"
         >
           <LogOut className="h-4 w-4" />

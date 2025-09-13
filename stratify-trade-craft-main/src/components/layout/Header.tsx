@@ -55,7 +55,7 @@ const Header: React.FC = () => {
       items: [
         { name: 'Strategy Copilot', href: '/copilot', icon: Bot },
         { name: 'Fund Management', href: '/fund-management', icon: Settings },
-        { name: 'Wishlist', href: '/wishlist', icon: TrendingUp },
+        { name: 'Settings', href: '/settings', icon: Settings },
       ],
     },
   ];
@@ -95,22 +95,20 @@ const Header: React.FC = () => {
           <span className="text-xl font-bold gradient-text">Stratify</span>
         </Link>
 
-        {/* Desktop Navigation - Only show when authenticated */}
-        {isAuthenticated && (
-          <nav className="hidden md:flex items-center space-x-6">
-            {navigation.map((item) => (
-              <NavDropdown key={item.name} item={item} />
-            ))}
-            <Link
-              to="/pricing"
-              className={`text-sm font-medium transition-colors hover:text-primary ${
-                isActive('/pricing') ? 'text-primary' : 'text-foreground'
-              }`}
-            >
-              Pricing
-            </Link>
-          </nav>
-        )}
+        {/* Desktop Navigation - ALWAYS visible */}
+        <nav className="hidden md:flex items-center space-x-6">
+          {navigation.map((item) => (
+            <NavDropdown key={item.name} item={item} />
+          ))}
+          <Link
+            to="/pricing"
+            className={`text-sm font-medium transition-colors hover:text-primary ${
+              isActive('/pricing') ? 'text-primary' : 'text-foreground'
+            }`}
+          >
+            Pricing
+          </Link>
+        </nav>
 
         {/* Actions */}
         <div className="flex items-center gap-3">
@@ -160,7 +158,8 @@ const Header: React.FC = () => {
                   <span className="text-xl font-bold gradient-text">Stratify</span>
                 </Link>
                 
-                {isAuthenticated && navigation.map((section) => (
+                {/* Mobile dropdown replacement (just show links as list) */}
+                {navigation.map((section) => (
                   <div key={section.name} className="space-y-3">
                     <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">
                       {section.name}
