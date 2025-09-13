@@ -5,7 +5,7 @@ import backtestRoutes from "./routes/backtest.routes.js";
 const app   = express();
 
 app.use(cors({
-    origin: process.env.CLIENT_URL || "http://localhost:3000",
+    origin: process.env.CLIENT_URL || "http://localhost:8080"||"http://10.125.28.109:8080/",
     credentials: true
 }));
 app.use(express.json({limit: "16kb"}));

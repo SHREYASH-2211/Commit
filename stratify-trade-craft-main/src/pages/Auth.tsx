@@ -25,9 +25,8 @@ import { Link } from 'react-router-dom';
 const Auth: React.FC = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
-  const { login } = useAuth();
+  const { login, register, isLoading } = useAuth();
   const [showPassword, setShowPassword] = useState(false);
-  const [isLoading, setIsLoading] = useState(false);
   
   const [loginForm, setLoginForm] = useState({
     email: '',
@@ -43,23 +42,21 @@ const Auth: React.FC = () => {
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-    setIsLoading(true);
     
-    // Simulate API call
-    setTimeout(() => {
-      const mockUser = {
-        id: '1',
-        name: 'User',
-        email: loginForm.email,
-      };
-      login(mockUser);
+    try {
+      await login(loginForm);
       toast({
         title: "Login Successful!",
         description: "Welcome back to Stratify",
       });
       navigate('/dashboard');
-      setIsLoading(false);
-    }, 1000);
+    } catch (error: any) {
+      toast({
+        title: "Login Failed",
+        description: error.message || "Invalid credentials",
+        variant: "destructive",
+      });
+    }
   };
 
   const handleSignup = async (e: React.FormEvent) => {
@@ -74,23 +71,24 @@ const Auth: React.FC = () => {
       return;
     }
     
-    setIsLoading(true);
-    
-    // Simulate API call
-    setTimeout(() => {
-      const mockUser = {
-        id: '1',
+    try {
+      await register({
         name: signupForm.name,
         email: signupForm.email,
-      };
-      login(mockUser);
+        password: signupForm.password,
+      });
       toast({
         title: "Account Created!",
         description: "Welcome to Stratify - your 7-day trial has started",
       });
       navigate('/dashboard');
-      setIsLoading(false);
-    }, 1000);
+    } catch (error: any) {
+      toast({
+        title: "Registration Failed",
+        description: error.message || "Failed to create account",
+        variant: "destructive",
+      });
+    }
   };
 
   const features = [
