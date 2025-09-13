@@ -14,6 +14,7 @@ import {
   LogOut,
   LifeBuoy,   // Assistance icon
   Layers,     // Algorithm Trading Levels icon
+  PlayCircle, // ✅ Simulator icon
 } from "lucide-react";
 import {
   Sidebar,
@@ -41,7 +42,8 @@ const navigationItems = [
   { title: "Fund Management", url: "/fund-management", icon: Settings },
   { title: "Wishlist", url: "/wishlist", icon: Heart },
   { title: "Assistance", url: "/assistance", icon: LifeBuoy },
-  { title: "Algorithm Trading Levels", url: "/algorithm-trading-levels", icon: Layers }, // ✅ New item
+  { title: "Algorithm Trading Levels", url: "/algorithm-trading-levels", icon: Layers },
+  { title: "Simulator", url: "/simulator", icon: PlayCircle }, // ✅ New item
 ];
 
 export function AppSidebar() {

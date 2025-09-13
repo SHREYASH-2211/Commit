@@ -8,10 +8,11 @@ import { AuthProvider, useAuth } from "./contexts/AuthContext";
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { AppSidebar } from "./components/layout/AppSidebar";
 import Header from "./components/layout/Header";
+
+// ✅ Pages
 import Landing from "./pages/Landing";
 import Dashboard from "./pages/Dashboard";
 import StrategyBuilder from "./pages/StrategyBuilder";
-import StrategyDetail from "./pages/StrategyDetail";
 import Backtesting from "./pages/Backtesting";
 import SocialTrading from "./pages/SocialTrading";
 import Reports from "./pages/Reports";
@@ -20,7 +21,8 @@ import Copilot from "./pages/Copilot";
 import FundManagement from "./pages/FundManagement";
 import Wishlist from "./pages/Wishlist";
 import Assistance from "./pages/Assistance";
-import AlgorithmTradingLevels from "./pages/Learning"; // ✅ NEW
+import AlgorithmTradingLevels from "./pages/Learning"; 
+import Simulator from "./pages/Simulator"; // ✅ NEW
 import Auth from "./pages/Auth";
 import NotFound from "./pages/NotFound";
 
@@ -59,7 +61,6 @@ const AppContent = () => {
             <Route path="/" element={<Dashboard />} />
             <Route path="/dashboard" element={<Dashboard />} />
             <Route path="/strategy-builder" element={<StrategyBuilder />} />
-            <Route path="/strategy/:id" element={<StrategyDetail />} />
             <Route path="/backtesting" element={<Backtesting />} />
             <Route path="/social-trading" element={<SocialTrading />} />
             <Route path="/reports" element={<Reports />} />
@@ -68,7 +69,8 @@ const AppContent = () => {
             <Route path="/fund-management" element={<FundManagement />} />
             <Route path="/wishlist" element={<Wishlist />} />
             <Route path="/assistance" element={<Assistance />} />
-            <Route path="/algorithm-trading-levels" element={<AlgorithmTradingLevels />} /> {/* ✅ NEW */}
+            <Route path="/algorithm-trading-levels" element={<AlgorithmTradingLevels />} />
+            <Route path="/simulator" element={<Simulator />} /> {/* ✅ NEW */}
             <Route path="*" element={<NotFound />} />
           </Routes>
         </div>
