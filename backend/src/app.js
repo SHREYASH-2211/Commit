@@ -5,7 +5,7 @@ import backtestRoutes from "./routes/backtest.routes.js";
 const app   = express();
 
 app.use(cors({
-    origin: process.env.CLIENT_URL || "http://localhost:8080"||"http://10.125.28.109:8080/",
+    origin: process.env.CLIENT_URL || "http://localhost:8080",
     credentials: true
 }));
 app.use(express.json({limit: "16kb"}));
@@ -21,7 +21,7 @@ import strategyRouter from "./routes/strategyRoutes.js";
 app.use("/api/v1/strategies", strategyRouter);
 //Routes declaration
 app.use("/api/v1/users", userRouter);
-app.use("/api/backtests", backtestRoutes);
+app.use("/api/v1/backtest", backtestRoutes);
 //http://localhost:8000/api/v1/users/register
 
 export default app;

@@ -40,13 +40,53 @@ const calculateMetrics = (prices, trades) => {
 export const startBacktest = asyncHandler(async (req, res) => {
   const { ticker, strategyName, parameters, timeframe } = req.body;
 
+  console.log('Backtest request:', { ticker, strategyName, parameters, timeframe });
+
   if (!ticker || !strategyName) {
     throw new ApiError(400, "Ticker and strategyName are required");
   }
 
+  // Map frontend timeframes to Yahoo Finance supported intervals
+  const timeframeMap = {
+    '1d': { method: 'historical', interval: '1d' },
+    '1h': { method: 'chart', interval: '1h' },
+    '5m': { method: 'chart', interval: '5m' }
+  };
+  
+  const config = timeframeMap[timeframe] || timeframeMap['1d'];
+  
   // fetch historical data from Yahoo Finance
-  const queryOptions = { period1: "2020-01-01", interval: timeframe || "1d" };
-  const result = await yahooFinance.historical(ticker, queryOptions);
+  let result;
+  try {
+    if (config.method === 'chart') {
+      // Use chart method for intraday data
+      const chartData = await yahooFinance.chart(ticker, {
+        period1: "2020-01-01",
+        interval: config.interval
+      });
+      
+      if (!chartData || !chartData.quotes) {
+        throw new ApiError(404, "No chart data available for this ticker");
+      }
+      
+      // Convert chart data to historical format
+      result = chartData.quotes
+        .filter(quote => quote.close && quote.date)
+        .map(quote => ({
+          date: new Date(quote.date),
+          close: quote.close
+        }));
+    } else {
+      // Use historical method for daily data
+      result = await yahooFinance.historical(ticker, {
+        period1: "2020-01-01",
+        interval: config.interval
+      });
+    }
+  } catch (error) {
+    console.error('Yahoo Finance API error:', error);
+    throw new ApiError(500, `Failed to fetch historical data: ${error.message}`);
+  }
 
   if (!result || result.length === 0) {
     throw new ApiError(404, "No historical data found");

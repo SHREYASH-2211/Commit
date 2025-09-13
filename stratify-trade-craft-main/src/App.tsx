@@ -11,6 +11,7 @@ import Header from "./components/layout/Header";
 import Landing from "./pages/Landing";
 import Dashboard from "./pages/Dashboard";
 import StrategyBuilder from "./pages/StrategyBuilder";
+import StrategyDetail from "./pages/StrategyDetail";
 import Backtesting from "./pages/Backtesting";
 import SocialTrading from "./pages/SocialTrading";
 import Reports from "./pages/Reports";
@@ -58,6 +59,7 @@ const AppContent = () => {
             <Route path="/" element={<Dashboard />} />
             <Route path="/dashboard" element={<Dashboard />} />
             <Route path="/strategy-builder" element={<StrategyBuilder />} />
+            <Route path="/strategy/:id" element={<StrategyDetail />} />
             <Route path="/backtesting" element={<Backtesting />} />
             <Route path="/social-trading" element={<SocialTrading />} />
             <Route path="/reports" element={<Reports />} />

@@ -1,8 +1,10 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
+import { useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { useToast } from '@/hooks/use-toast';
 import {
   TrendingUp,
   TrendingDown,
@@ -14,6 +16,12 @@ import {
   ArrowDownRight,
   Plus,
   Eye,
+  Loader2,
+  Play,
+  Pause,
+  Edit,
+  Trash2,
+  Settings,
 } from 'lucide-react';
 import {
   LineChart,
@@ -27,9 +35,21 @@ import {
   Pie,
   Cell,
 } from 'recharts';
+import { strategyAPI, Strategy, StrategyListResponse } from '@/services/api';
 
 const Dashboard: React.FC = () => {
-  // Mock data for charts
+  const navigate = useNavigate();
+  const { toast } = useToast();
+  const [strategies, setStrategies] = useState<Strategy[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [stats, setStats] = useState({
+    totalStrategies: 0,
+    activeStrategies: 0,
+    pausedStrategies: 0,
+    totalPnL: 0,
+  });
+
+  // Mock data for charts (these would come from backtesting/performance APIs)
   const portfolioData = [
     { name: 'Jan', value: 10000 },
     { name: 'Feb', value: 12000 },
@@ -40,62 +60,90 @@ const Dashboard: React.FC = () => {
   ];
 
   const allocationData = [
-    { name: 'Equity Strategies', value: 45, color: '#0ea5e9' },
-    { name: 'Options Trading', value: 30, color: '#8b5cf6' },
-    { name: 'Futures', value: 15, color: '#f59e0b' },
-    { name: 'Cash', value: 10, color: '#10b981' },
+    { name: 'Trend Following', value: 35, color: '#0ea5e9' },
+    { name: 'Mean Reversion', value: 25, color: '#8b5cf6' },
+    { name: 'Momentum', value: 20, color: '#f59e0b' },
+    { name: 'Breakout', value: 15, color: '#10b981' },
+    { name: 'Other', value: 5, color: '#ef4444' },
   ];
 
-  const activeStrategies = [
-    {
-      name: 'Moving Average Crossover',
-      status: 'Active',
-      pnl: '+12.5%',
-      trades: 24,
-      winRate: '78%',
-    },
-    {
-      name: 'Mean Reversion Bot',
-      status: 'Active', 
-      pnl: '+8.3%',
-      trades: 18,
-      winRate: '72%',
-    },
-    {
-      name: 'Momentum Scalper',
-      status: 'Paused',
-      pnl: '-2.1%',
-      trades: 12,
-      winRate: '45%',
-    },
-  ];
+  // Load strategies on component mount
+  useEffect(() => {
+    loadStrategies();
+  }, []);
 
-  const recentTrades = [
-    {
-      symbol: 'AAPL',
-      action: 'BUY',
-      quantity: 100,
-      price: 175.25,
-      pnl: '+2.5%',
-      time: '10:30 AM',
-    },
-    {
-      symbol: 'TSLA',
-      action: 'SELL',
-      quantity: 50,
-      price: 245.80,
-      pnl: '+5.2%',
-      time: '09:45 AM',
-    },
-    {
-      symbol: 'MSFT',
-      action: 'BUY',
-      quantity: 75,
-      price: 415.60,
-      pnl: '-1.2%',
-      time: '09:15 AM',
-    },
-  ];
+  const loadStrategies = async () => {
+    try {
+      setIsLoading(true);
+      const response = await strategyAPI.getUserStrategies({ limit: 10 });
+      if (response.success) {
+        setStrategies(response.data.strategies);
+        updateStats(response.data.strategies);
+      }
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to load strategies",
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const updateStats = (strategyList: Strategy[]) => {
+    const active = strategyList.filter(s => s.isActive).length;
+    const paused = strategyList.filter(s => !s.isActive).length;
+    
+    setStats({
+      totalStrategies: strategyList.length,
+      activeStrategies: active,
+      pausedStrategies: paused,
+      totalPnL: 0, // This would come from performance data
+    });
+  };
+
+  const handleToggleStrategy = async (strategyId: string, isActive: boolean) => {
+    try {
+      const response = await strategyAPI.updateStrategy(strategyId, { isActive: !isActive });
+      if (response.success) {
+        setStrategies(prev => 
+          prev.map(s => s._id === strategyId ? { ...s, isActive: !isActive } : s)
+        );
+        updateStats(strategies.map(s => s._id === strategyId ? { ...s, isActive: !isActive } : s));
+        toast({
+          title: "Success",
+          description: `Strategy ${!isActive ? 'activated' : 'paused'} successfully`,
+        });
+      }
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to update strategy status",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleDeleteStrategy = async (strategyId: string) => {
+    try {
+      const response = await strategyAPI.deleteStrategy(strategyId);
+      if (response.success) {
+        setStrategies(prev => prev.filter(s => s._id !== strategyId));
+        updateStats(strategies.filter(s => s._id !== strategyId));
+        toast({
+          title: "Success",
+          description: "Strategy deleted successfully",
+        });
+      }
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to delete strategy",
+        variant: "destructive",
+      });
+    }
+  };
 
   return (
     <div className="min-h-screen bg-background p-6">
@@ -131,28 +179,13 @@ const Dashboard: React.FC = () => {
         >
           <Card className="gradient-card border-0 shadow-card hover:shadow-premium transition-all duration-300">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Total Portfolio</CardTitle>
-              <DollarSign className="h-4 w-4 text-muted-foreground" />
+              <CardTitle className="text-sm font-medium">Total Strategies</CardTitle>
+              <BarChart3 className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">$164,500</div>
-              <p className="text-xs text-muted-foreground flex items-center mt-1">
-                <TrendingUp className="w-3 h-3 mr-1 text-profit" />
-                +12.5% from last month
-              </p>
-            </CardContent>
-          </Card>
-
-          <Card className="gradient-card border-0 shadow-card hover:shadow-premium transition-all duration-300">
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Today's P&L</CardTitle>
-              <Activity className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold text-profit">+$2,847</div>
-              <p className="text-xs text-muted-foreground flex items-center mt-1">
-                <ArrowUpRight className="w-3 h-3 mr-1 text-profit" />
-                +1.73% today
+              <div className="text-2xl font-bold">{stats.totalStrategies}</div>
+              <p className="text-xs text-muted-foreground">
+                {stats.activeStrategies} active, {stats.pausedStrategies} paused
               </p>
             </CardContent>
           </Card>
@@ -160,22 +193,36 @@ const Dashboard: React.FC = () => {
           <Card className="gradient-card border-0 shadow-card hover:shadow-premium transition-all duration-300">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium">Active Strategies</CardTitle>
-              <BarChart3 className="h-4 w-4 text-muted-foreground" />
+              <Activity className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">8</div>
-              <p className="text-xs text-muted-foreground">2 paused, 6 running</p>
+              <div className="text-2xl font-bold text-profit">{stats.activeStrategies}</div>
+              <p className="text-xs text-muted-foreground flex items-center mt-1">
+                <ArrowUpRight className="w-3 h-3 mr-1 text-profit" />
+                Currently running
+              </p>
             </CardContent>
           </Card>
 
           <Card className="gradient-card border-0 shadow-card hover:shadow-premium transition-all duration-300">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Win Rate</CardTitle>
-              <Users className="h-4 w-4 text-muted-foreground" />
+              <CardTitle className="text-sm font-medium">Paused Strategies</CardTitle>
+              <Pause className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">74.2%</div>
-              <p className="text-xs text-muted-foreground">Across all strategies</p>
+              <div className="text-2xl font-bold">{stats.pausedStrategies}</div>
+              <p className="text-xs text-muted-foreground">Not currently active</p>
+            </CardContent>
+          </Card>
+
+          <Card className="gradient-card border-0 shadow-card hover:shadow-premium transition-all duration-300">
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Total P&L</CardTitle>
+              <DollarSign className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">$0.00</div>
+              <p className="text-xs text-muted-foreground">From backtesting data</p>
             </CardContent>
           </Card>
         </motion.div>
@@ -278,39 +325,78 @@ const Dashboard: React.FC = () => {
           >
             <Card className="gradient-card border-0 shadow-card">
               <CardHeader>
-                <CardTitle>Active Strategies</CardTitle>
+                <CardTitle>My Strategies</CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
-                {activeStrategies.map((strategy, index) => (
-                  <div key={index} className="flex items-center justify-between p-3 rounded-lg bg-muted/30">
-                    <div className="space-y-1">
-                      <p className="font-medium">{strategy.name}</p>
-                      <div className="flex items-center gap-3 text-sm text-muted-foreground">
-                        <Badge 
-                          variant={strategy.status === 'Active' ? 'default' : 'secondary'}
-                          className="text-xs"
+                {isLoading ? (
+                  <div className="flex items-center justify-center py-8">
+                    <Loader2 className="w-6 h-6 animate-spin" />
+                  </div>
+                ) : strategies.length === 0 ? (
+                  <div className="text-center py-8 text-muted-foreground">
+                    <BarChart3 className="w-12 h-12 mx-auto mb-4 opacity-50" />
+                    <p className="text-sm">No strategies created yet</p>
+                    <Button variant="outline" className="mt-4">
+                      <Plus className="w-4 h-4 mr-2" />
+                      Create Strategy
+                    </Button>
+                  </div>
+                ) : (
+                  strategies.map((strategy) => (
+                    <div key={strategy._id} className="flex items-center justify-between p-3 rounded-lg bg-muted/30">
+                      <div className="space-y-1 flex-1">
+                        <div className="flex items-center gap-2">
+                          <p className="font-medium">{strategy.name}</p>
+                          <Badge variant="outline" className="text-xs">{strategy.category}</Badge>
+                        </div>
+                        <p className="text-sm text-muted-foreground line-clamp-1">{strategy.description}</p>
+                        <div className="flex items-center gap-3 text-sm text-muted-foreground">
+                          <Badge 
+                            variant={strategy.isActive ? 'default' : 'secondary'}
+                            className="text-xs"
+                          >
+                            {strategy.isActive ? 'Active' : 'Paused'}
+                          </Badge>
+                          <span>{strategy.entryRules.length} entry rules</span>
+                          <span>{strategy.exitRules.length} exit rules</span>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          onClick={() => handleToggleStrategy(strategy._id, strategy.isActive)}
                         >
-                          {strategy.status}
-                        </Badge>
-                        <span>{strategy.trades} trades</span>
-                        <span>Win: {strategy.winRate}</span>
+                          {strategy.isActive ? <Pause className="w-4 h-4" /> : <Play className="w-4 h-4" />}
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          onClick={() => navigate(`/strategy/${strategy._id}`)}
+                        >
+                          <Edit className="w-4 h-4" />
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          onClick={() => handleDeleteStrategy(strategy._id)}
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </Button>
                       </div>
                     </div>
-                    <div className="text-right">
-                      <p className={`font-semibold ${strategy.pnl.startsWith('+') ? 'text-profit' : 'text-loss'}`}>
-                        {strategy.pnl}
-                      </p>
-                    </div>
-                  </div>
-                ))}
-                <Button variant="outline" className="w-full">
-                  View All Strategies
-                </Button>
+                  ))
+                )}
+                {strategies.length > 0 && (
+                  <Button variant="outline" className="w-full">
+                    View All Strategies
+                  </Button>
+                )}
               </CardContent>
             </Card>
           </motion.div>
 
-          {/* Recent Trades */}
+          {/* Strategy Performance */}
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
@@ -318,35 +404,17 @@ const Dashboard: React.FC = () => {
           >
             <Card className="gradient-card border-0 shadow-card">
               <CardHeader>
-                <CardTitle>Recent Trades</CardTitle>
+                <CardTitle>Strategy Performance</CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
-                {recentTrades.map((trade, index) => (
-                  <div key={index} className="flex items-center justify-between p-3 rounded-lg bg-muted/30">
-                    <div className="space-y-1">
-                      <div className="flex items-center gap-2">
-                        <span className="font-medium">{trade.symbol}</span>
-                        <Badge 
-                          variant={trade.action === 'BUY' ? 'default' : 'secondary'}
-                          className="text-xs"
-                        >
-                          {trade.action}
-                        </Badge>
-                      </div>
-                      <p className="text-sm text-muted-foreground">
-                        {trade.quantity} @ ${trade.price}
-                      </p>
-                    </div>
-                    <div className="text-right">
-                      <p className={`font-semibold ${trade.pnl.startsWith('+') ? 'text-profit' : 'text-loss'}`}>
-                        {trade.pnl}
-                      </p>
-                      <p className="text-xs text-muted-foreground">{trade.time}</p>
-                    </div>
-                  </div>
-                ))}
+                <div className="text-center py-8 text-muted-foreground">
+                  <Activity className="w-12 h-12 mx-auto mb-4 opacity-50" />
+                  <p className="text-sm">Performance data will appear here</p>
+                  <p className="text-xs mt-2">Run backtests to see strategy performance</p>
+                </div>
                 <Button variant="outline" className="w-full">
-                  View Trade History
+                  <BarChart3 className="w-4 h-4 mr-2" />
+                  Run Backtest
                 </Button>
               </CardContent>
             </Card>
