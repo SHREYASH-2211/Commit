@@ -1,14 +1,14 @@
-# Commit - Strategy Builder, Backtesting, and AI Trading Platform
+# STRATIFY - Strategy Builder, Backtesting, and AI Trading Platform
 
-Commit is a full-stack trading-focused application built to help users create algorithmic strategies, test them against historical market data, and manage accounts with secure authentication. The backend powers strategy creation, rule management, backtesting, user sessions, and a Gemini-based AI endpoint, while the frontend is a Next.js 15 app scaffold that serves as the UI foundation for the platform.
+Stratify is a full-stack trading-focused application built to help users create algorithmic strategies, test them against historical market data, and manage accounts with secure authentication. The backend powers strategy creation, rule management, backtesting, user sessions, and a Gemini-based AI endpoint, while the frontend is a Next.js 15 app scaffold that serves as the UI foundation for the platform.
 
 The project was built to practice a real-world product flow that combines authentication, portfolio-style strategy modelling, market data analysis, scheduled automation, and AI-assisted workflows in one codebase.
 
 ---
 
-## Why Commit Was Created
+## Why Stratify Was Created
 
-Most trading demos only show a single chart or a static calculator. Commit was designed to go further by combining the pieces that make a real strategy platform useful:
+Most trading demos only show a single chart or a static calculator. Stratify was designed to go further by combining the pieces that make a real strategy platform useful:
 
 - Users should be able to register, log in, and keep a secure session.
 - Traders should be able to build reusable strategies instead of hardcoding logic.
@@ -342,7 +342,7 @@ Visit the frontend URL in your browser and try the following:
 
 ## What This Project Demonstrates
 
-Commit demonstrates how to build a strategy-centric trading backend with:
+Stratify demonstrates how to build a strategy-centric trading backend with:
 
 - JWT authentication with refresh sessions
 - Role-based authorization for retail and admin users
